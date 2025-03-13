@@ -9,6 +9,7 @@ from enum import Enum
 
 name = 'common'
 
+DEFAULT_BUCKET_NAME = 'fly-rag'
 SALT = 'ZERO_JX_DEEP_SEARCH:'
 REQ_CHECK = "REQ_CHECK"
 

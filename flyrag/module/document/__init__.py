@@ -81,8 +81,9 @@ class DocumentParserContext(object):
         # 动态加载解析器
         from flyrag.module.document.docx_parser import DocxParser
         from flyrag.module.document.pdf_parser import PdfParser
+        from flyrag.module.document.txt_parser import TxtParser
         doc_parser = eval(f'{doc_format.name}Parser("{file}", {start_page}, {end_page})')
         return doc_parser.parse()
 
 if __name__ == '__main__':
-    print(DocumentParserContext.do_parse(f'C:/Users/niufe/Desktop/test.docx'))
+    print(DocumentParserContext.do_parse(f'docx_parser.py'))
