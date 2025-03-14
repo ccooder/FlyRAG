@@ -5,8 +5,7 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from api import file
-from api import knowledge_base
+from api import file, document, knowledge_base
 
 app = FastAPI()
 
@@ -20,7 +19,8 @@ app.add_middleware(
 )
 app.include_router(file.router)
 app.include_router(knowledge_base.router)
+app.include_router(document.router)
 if __name__ == '__main__':
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
 
+    uvicorn.run(app, host="0.0.0.0", port=8000)
