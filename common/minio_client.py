@@ -25,7 +25,7 @@ class MinioClient(ABC):
             endpoint = os.getenv('MINIO_ENDPOINT')
             access_key = os.getenv('MINIO_ACCESS_KEY')
             secret_key = os.getenv('MINIO_SECRET_KEY')
-            self.client = Minio(endpoint, access_key, secret_key, secure=False)
+            self.__client = Minio(endpoint, access_key, secret_key, secure=False)
 
     def bucket_exists(self, bucket_name):
         """
@@ -34,7 +34,7 @@ class MinioClient(ABC):
         :return: 如果存储桶存在返回 True，否则返回 False
         """
         try:
-            return self.client.bucket_exists(bucket_name)
+            return self.__client.bucket_exists(bucket_name)
         except S3Error as e:
             common.get_logger().error(f"Error checking bucket: {e}")
             return False
@@ -46,7 +46,7 @@ class MinioClient(ABC):
         :return: 如果创建成功返回 True，否则返回 False
         """
         try:
-            self.client.make_bucket(bucket_name)
+            self.__client.make_bucket(bucket_name)
             return True
         except S3Error as e:
             common.get_logger().error(f"Error creating bucket: {e}")
@@ -59,7 +59,7 @@ class MinioClient(ABC):
         :return: 如果删除成功返回 True，否则返回 False
         """
         try:
-            self.client.remove_bucket(bucket_name)
+            self.__client.remove_bucket(bucket_name)
             return True
         except S3Error as e:
             common.get_logger().error(f"Error removing bucket: {e}")
@@ -71,7 +71,7 @@ class MinioClient(ABC):
         :return: 存储桶列表
         """
         try:
-            buckets = self.client.list_buckets()
+            buckets = self.__client.list_buckets()
             return [bucket.name for bucket in buckets]
         except S3Error as e:
             common.get_logger().error(f"Error listing buckets: {e}")
@@ -90,7 +90,7 @@ class MinioClient(ABC):
         try:
             if not self.bucket_exists(bucket_name):
                 self.create_bucket(bucket_name)
-            self.client.put_object(bucket_name, obj_name, file_obj, lenght, content_type)
+            self.__client.put_object(bucket_name, obj_name, file_obj, lenght, content_type)
             return True
         except S3Error as e:
             common.get_logger().error(f"Error uploading file: {e}")
@@ -105,7 +105,7 @@ class MinioClient(ABC):
         :return: 如果下载成功返回 True，否则返回 False
         """
         try:
-            self.client.fget_object(bucket_name, object_name, file_path)
+            self.__client.fget_object(bucket_name, object_name, file_path)
             return True
         except S3Error as e:
             common.get_logger().error(f"Error downloading file: {e}")
@@ -119,7 +119,7 @@ class MinioClient(ABC):
         :return: 如果删除成功返回 True，否则返回 False
         """
         try:
-            self.client.remove_object(bucket_name, object_name)
+            self.__client.remove_object(bucket_name, object_name)
             return True
         except S3Error as e:
             common.get_logger().error(f"Error deleting file: {e}")
@@ -132,7 +132,7 @@ class MinioClient(ABC):
         :return: 对象列表
         """
         try:
-            objects = self.client.list_objects(bucket_name)
+            objects = self.__client.list_objects(bucket_name)
             return [obj.object_name for obj in objects]
         except S3Error as e:
             common.get_logger().error(f"Error listing objects: {e}")

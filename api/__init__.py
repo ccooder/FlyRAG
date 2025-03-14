@@ -2,6 +2,7 @@
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/13 22:05
 
+from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
 
 
@@ -13,7 +14,7 @@ class R(BaseModel):
 
     @classmethod
     def ok(cls, msg: str = "操作成功", data=None):
-        return R(code=200, data=data, msg=msg, status=True).__dict__
+        return jsonable_encoder(R(code=200, data=data, msg=msg, status=True))
 
     @classmethod
     def fail(cls, msg: str):

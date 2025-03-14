@@ -2,8 +2,10 @@
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/13 11:11
 import functools
+import json
 import time
 import hashlib
+from datetime import datetime, date
 
 from enum import Enum
 
@@ -12,6 +14,17 @@ name = 'common'
 DEFAULT_BUCKET_NAME = 'fly-rag'
 SALT = 'ZERO_JX_DEEP_SEARCH:'
 REQ_CHECK = "REQ_CHECK"
+
+class FlyJSONEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, int):
+            if obj > 0x20000000000000:
+                return str(obj)
+        elif isinstance(obj, datetime):
+            return obj.strftime('%Y-%m-%d %H:%M:%S')
+        elif isinstance(obj, date):
+            return obj.strftime('%Y-%m-%d')
+        return super().default(obj)
 
 # 日志模块
 import logging.config

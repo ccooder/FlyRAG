@@ -5,7 +5,6 @@ from fengluU import exec_time
 
 from flyrag.module.document import BaseParser
 from langchain_community.document_loaders import TextLoader
-from langchain_community.storage import
 
 
 class TxtParser(BaseParser):
