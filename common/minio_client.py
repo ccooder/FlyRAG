@@ -9,7 +9,7 @@ from minio import Minio, S3Error
 from dotenv import load_dotenv
 
 
-class MinioClient(ABC):
+class MinioClient(object):
     __instance = None
     __is_first = True
 

@@ -81,4 +81,7 @@ class Document(Entity, table=True):
     __tablename__ = 'fr_document'
     kb_id: int = Field(default=None)
     name: str = Field(default=None)
+    original_name: str = Field(default=None)
+    size: int = Field(default=None)
+    obj_name: str = Field(default=None)
     char_count: int = Field(default=None)

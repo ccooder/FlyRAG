@@ -1,7 +1,7 @@
 #! /usr/bin/python
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/13 10:49
-from abc import ABC
+from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any
 from pathlib import Path
@@ -42,6 +42,7 @@ class BaseParser(ABC):
     def end_page(self, end_page: int):
         self.__end_page = end_page
 
+    @abstractmethod
     def parse(self):
         '''
         解析文档

@@ -5,7 +5,9 @@
 from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
-from api import file, document, knowledge_base
+from flyrag.api import document, knowledge_base
+from flyrag.api import file
+from flyrag.task.task_dispatcher import TaskDispatcher
 
 app = FastAPI()
 
@@ -22,5 +24,5 @@ app.include_router(knowledge_base.router)
 app.include_router(document.router)
 if __name__ == '__main__':
     import uvicorn
-
+    TaskDispatcher().start_pipeline()
     uvicorn.run(app, host="0.0.0.0", port=8000)

@@ -9,7 +9,7 @@ from fastapi import APIRouter, UploadFile, File
 from starlette.responses import JSONResponse
 
 import common
-from api import R
+from flyrag.api import R
 from common.minio_client import MinioClient
 
 router = APIRouter(prefix='/file', tags=["file"])

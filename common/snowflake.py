@@ -1,7 +1,7 @@
 import time
 import logging
 
-class Snowflake:
+class Snowflake(object):
     def __init__(self, datacenter_id, worker_id, sequence=0):
         """
         初始化Snowflake ID生成器

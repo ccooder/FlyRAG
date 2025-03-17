@@ -7,8 +7,8 @@ from fastapi import APIRouter, Query
 from fastapi.params import Depends
 from sqlmodel import Session, select
 
-from api import R
-from api.entity import KnowledgeBase, KnowledgeBaseUpdate, DeleteEntity, KnowledgeBaseQuery
+from flyrag.api import R
+from flyrag.api.entity import KnowledgeBase, KnowledgeBaseUpdate, DeleteEntity, KnowledgeBaseQuery
 from common.mysql_client import MysqlClient
 
 router = APIRouter(prefix='/kb', tags=["knowledge_base"])

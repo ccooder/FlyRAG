@@ -2,7 +2,6 @@
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/14 12:36
 import os
-from abc import ABC
 from typing import Union, Type
 
 from dotenv import load_dotenv
@@ -12,10 +11,10 @@ from urllib.parse import quote_plus
 
 from sqlmodel.sql._expression_select_cls import SelectOfScalar
 
-from api.entity import QueryEntity, Entity
+from flyrag.api.entity import QueryEntity, Entity
 
 
-class MysqlClient(ABC):
+class MysqlClient(object):
     __instance = None
     __is_first = True
 
