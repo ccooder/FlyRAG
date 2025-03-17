@@ -31,7 +31,5 @@ class TaskDispatcher(object):
         embedding = Process(target=EmbeddingPipeline().start, name='p-embedding')
         embedding.start()
 
-
     def dispatch_document(self, docs: List[Document], status: DocumentTaskStatus):
         pass
-

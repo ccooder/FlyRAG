@@ -4,13 +4,19 @@
 import time
 
 import common
+from flyrag.api.entity import Entity, Document
 from flyrag.task import TaskPipeline
 
 name = 'embedding'
 
+
 class EmbeddingPipeline(TaskPipeline):
+
     def start(self):
         while True:
             common.get_logger().info(456)
             time.sleep(2)
+        pass
+
+    def execute(self, doc: Document):
         pass
