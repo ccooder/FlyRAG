@@ -15,6 +15,7 @@ DEFAULT_BUCKET_NAME = 'fly-rag'
 SALT = 'ZERO_JX_DEEP_SEARCH:'
 REQ_CHECK = "REQ_CHECK"
 
+
 class FlyJSONEncoder(json.JSONEncoder):
     def default(self, obj):
         if isinstance(obj, int):
@@ -25,6 +26,7 @@ class FlyJSONEncoder(json.JSONEncoder):
         elif isinstance(obj, date):
             return obj.strftime('%Y-%m-%d')
         return super().default(obj)
+
 
 # 日志模块
 import logging.config

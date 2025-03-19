@@ -9,6 +9,7 @@ from flyrag.api.entity import Entity
 name = 'task'
 
 PIPELINE_LIMIT = 4
+REDIS_KEY_PIPELINE_FLAG = 'flyrag:pipeline_flag'
 REDIS_KEY_PIPELINE_TASK_COUNT = 'flyrag:pipeline_task_count:{}'
 REDIS_KEY_PIPELINE_QUEUE = 'flyrag:pipeline_queue:{}'
 

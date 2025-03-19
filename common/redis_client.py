@@ -4,8 +4,7 @@
 import os
 
 from dotenv import load_dotenv
-from langchain_community.utilities.redis import get_client
-from redis import Redis
+from redis.asyncio import Redis, ConnectionPool
 
 
 class RedisClient(object):
@@ -24,9 +23,10 @@ class RedisClient(object):
             host = os.getenv('REDIS_HOST')
             password = os.getenv('REDIS_PASSWORD')
             database = os.getenv('REDIS_DATABASE')
-            client = get_client(f"redis://:{password}@{host}/{database}")
+            self.__pool = ConnectionPool.from_url(f"redis://:{password}@{host}/{database}")
 
-            self.__redis = client
-    def get_redis(self) -> Redis:
-        return self.__redis
+    async def close(self):
+        await self.__pool.disconnect()
 
+    def get_redis(self):
+        return Redis(connection_pool=self.__pool)

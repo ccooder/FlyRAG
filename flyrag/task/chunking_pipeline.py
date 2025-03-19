@@ -3,26 +3,30 @@
 # Created by Fenglu Niu on 2025/3/17 15:12
 import time
 
-import common
+from redis.asyncio import Redis
+
 from common.redis_client import RedisClient
 from flyrag.api.entity import Entity, Document
-from flyrag.task import TaskPipeline, REDIS_KEY_PIPELINE_TASK_COUNT, PIPELINE_LIMIT, REDIS_KEY_PIPELINE_QUEUE
+from flyrag.task import TaskPipeline, REDIS_KEY_PIPELINE_TASK_COUNT, PIPELINE_LIMIT, REDIS_KEY_PIPELINE_QUEUE, \
+    REDIS_KEY_PIPELINE_FLAG
 
 name = 'chunking'
 
 
 class ChunkingPipeline(TaskPipeline):
+    __redis: Redis = RedisClient().get_redis()
+    flag = True
 
-
-    def __init__(self):
-        super().__init__()
-        self.__redis = RedisClient().get_redis()
-
-    def start(self):
-        redis = RedisClient().get_redis()
-        while True:
+    async def start(self):
+        while int((await self.__redis.get(REDIS_KEY_PIPELINE_FLAG)).decode('utf-8')):
             # 判断流水线执行任务数是否达到限制
-            if self.__redis.get(REDIS_KEY_PIPELINE_TASK_COUNT.format(name)) >= PIPELINE_LIMIT:
+            task_count = await self.__redis.get(REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
+            if task_count is None:
+                task_count = 0
+                await self.__redis.set(REDIS_KEY_PIPELINE_TASK_COUNT.format(name), task_count)
+            else:
+                task_count = int(task_count.decode('utf-8'))
+            if task_count >= PIPELINE_LIMIT:
                 time.sleep(1)
                 continue
 
@@ -36,8 +40,8 @@ class ChunkingPipeline(TaskPipeline):
                     """
 
             # 执行 Lua 脚本
-            doc = redis.eval(script, 2, REDIS_KEY_PIPELINE_QUEUE.format(name),
-                             REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
+            doc = await self.__redis.eval(script, 2, REDIS_KEY_PIPELINE_QUEUE.format(name),
+                                          REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
             if doc is None:
                 time.sleep(1)
                 continue
@@ -50,4 +54,5 @@ class ChunkingPipeline(TaskPipeline):
 
     def execute(self, doc: Document):
         # TODO NFL 切片的逻辑
+        print('切片逻辑', doc)
         pass

@@ -9,8 +9,6 @@ from sqlalchemy import Select
 from sqlmodel import create_engine, Session
 from urllib.parse import quote_plus
 
-from sqlmodel.sql._expression_select_cls import SelectOfScalar
-
 from flyrag.api.entity import QueryEntity, Entity
 
 
@@ -30,14 +28,15 @@ class MysqlClient(object):
             host = os.getenv('MYSQL_HOST')
             user = os.getenv('MYSQL_USER')
             password = os.getenv('MYSQL_PASSWORD')
-            self.__engine = create_engine(f"mysql+mysqlconnector://{user}:{quote_plus(password)}@{host}/fly_rag", echo=True)
-
+            self.__engine = create_engine(f"mysql+mysqlconnector://{user}:{quote_plus(password)}@{host}/fly_rag",
+                                          echo=True)
 
     def get_session(self):
         with Session(self.__engine) as session:
             yield session
+
     @staticmethod
-    def fill_statement(statement: Union[Select, SelectOfScalar], cls: Type[Entity], qe: QueryEntity):
+    def fill_statement(statement, cls: Type[Entity], qe: QueryEntity):
         if qe.id:
             statement = statement.where(cls.id == qe.id)
         if qe.status:
@@ -49,6 +48,3 @@ class MysqlClient(object):
         if qe.end_time:
             statement = statement.where(cls.create_time <= qe.end_time)
         return statement
-
-
-

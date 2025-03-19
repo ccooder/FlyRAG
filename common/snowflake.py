@@ -1,6 +1,7 @@
 import time
 import logging
 
+
 class Snowflake(object):
     def __init__(self, datacenter_id, worker_id, sequence=0):
         """
@@ -77,9 +78,10 @@ class Snowflake(object):
         self.last_timestamp = timestamp
 
         return ((timestamp - self.twepoch) << self.timestamp_left_shift) | \
-               (self.datacenter_id << self.datacenter_id_shift) | \
-               (self.worker_id << self.worker_id_shift) | \
-               self.sequence
+            (self.datacenter_id << self.datacenter_id_shift) | \
+            (self.worker_id << self.worker_id_shift) | \
+            self.sequence
+
 
 # 示例用法
 if __name__ == "__main__":
