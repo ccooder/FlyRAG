@@ -11,6 +11,7 @@ import common
 from flyrag.api import R
 from flyrag.api.entity import KnowledgeBase, KnowledgeBaseUpdate, DeleteEntity, KnowledgeBaseQuery, KnowledgeCreate
 from common.mysql_client import MysqlClient
+from flyrag.api.service.document_service import DocumentService
 
 router = APIRouter(prefix='/kb', tags=["knowledge_base"])
 SessionDep = Annotated[Session, Depends(MysqlClient().get_session)]
@@ -22,9 +23,7 @@ async def create_kb(kb_create: KnowledgeCreate, session: SessionDep):
         return R.fail('知识库名称不能为空')
     try:
         if kb_create.docs and len(kb_create.docs) > 0:
-            # 调用创建文档的方法
-            # await create_doc(kb_create.docs, session)
-            pass
+            DocumentService.create_docs(session, kb_create.kb_id, kb_create.docs)
         session.add(kb_create.get_kb())
 
         session.commit()

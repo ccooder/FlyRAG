@@ -54,6 +54,7 @@ class Document(Entity, table=True):
     知识库实体
     """
     __tablename__ = 'fr_document'
+    model_config = model_config
     kb_id: int = Field(default=None, alias="kbId")
     name: str = Field(default=None)
     original_name: str = Field(default=None)
