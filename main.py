@@ -16,7 +16,6 @@ async def startup():
     await TaskDispatcher.start_pipeline()
 
 
-
 async def shutdown():
     await TaskDispatcher.stop_pipeline()
     await RedisClient().close()
@@ -36,7 +35,7 @@ app = FastAPI(lifespan=lifespan)
 # 添加 CORS 中间件（可选）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

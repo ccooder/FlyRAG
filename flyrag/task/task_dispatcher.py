@@ -6,7 +6,7 @@ from typing import List
 
 from common.redis_client import RedisClient
 from flyrag.api.entity import Document
-from flyrag.task import DocumentTaskStatus, TaskPipeline, REDIS_KEY_PIPELINE_FLAG
+from flyrag.task import DocumentTaskStatus, TaskPipeline, REDIS_KEY_PIPELINE_FLAG, REDIS_KEY_PIPELINE_QUEUE
 from flyrag.task.chunking_pipeline import ChunkingPipeline
 from flyrag.task.embedding_pipeline import EmbeddingPipeline
 
@@ -43,5 +43,8 @@ class TaskDispatcher(object):
     async def stop_pipeline(cls):
         await cls.__redis.set(REDIS_KEY_PIPELINE_FLAG, 0)
 
-    def dispatch_document(self, docs: List[Document], status: DocumentTaskStatus):
+    @classmethod
+    async def dispatch_document(cls, docs: List[Document], status: DocumentTaskStatus):
+        if status == DocumentTaskStatus.CHUNKING:
+            await cls.__redis.lpush(REDIS_KEY_PIPELINE_QUEUE.format(ChunkingPipeline.__name__), *docs)
         pass

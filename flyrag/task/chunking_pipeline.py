@@ -55,4 +55,5 @@ class ChunkingPipeline(TaskPipeline):
     def execute(self, doc: Document):
         # TODO NFL 切片的逻辑
         print('切片逻辑', doc)
+        time.sleep(30)
         pass

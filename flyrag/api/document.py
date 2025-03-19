@@ -1,15 +1,20 @@
 #! /usr/bin/python
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/14 17:28
-from typing import List, Annotated
+import asyncio
+from typing import Annotated
 
 from fastapi import APIRouter
 from fastapi.params import Depends
-from sqlmodel import Session
+from sqlalchemy import func
+from sqlalchemy.sql.coercions import expect
+from sqlmodel import Session, select, col
 
 from flyrag.api import R
-from flyrag.api.entity import Document
+from flyrag.api.entity import DocumentCreate, KnowledgeBase
 from common.mysql_client import MysqlClient
+from flyrag.task import DocumentTaskStatus
+from flyrag.task.task_dispatcher import TaskDispatcher
 
 router = APIRouter(prefix='/document', tags=["document"])
 
@@ -17,9 +22,22 @@ SessionDep = Annotated[Session, Depends(MysqlClient().get_session)]
 
 
 @router.post("/create")
-async def create_doc(docs: List[Document], session: SessionDep):
-    if len(docs) == 0:
-        return R.fail('文档数量不能为0')
-    session.add_all(docs)
-    session.commit()
-    return R.success('文档添加成功')
+async def create_doc(doc_create: DocumentCreate, session: SessionDep):
+    try:
+        if len(doc_create.docs) == 0:
+            return R.fail('文档数量不能为0')
+        if not doc_create.kb_id:
+            return R.fail('知识库id不能为空')
+        kb = session.exec(select(func.count(col(KnowledgeBase.id))).where(KnowledgeBase.id == doc_create.kb_id)).one()
+        if kb == 0:
+            return R.fail('知识库不存在')
+        for doc in doc_create.docs:
+            doc.kb_id = doc_create.kb_id
+        session.add_all(doc_create.docs)
+        session.commit()
+    except Exception as e:
+        session.rollback()
+
+    asyncio.create_task(TaskDispatcher.dispatch_document(doc_create.docs, DocumentTaskStatus.CHUNKING))
+
+    return R.ok('文档添加成功')

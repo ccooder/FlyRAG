@@ -14,7 +14,7 @@ class EmbeddingPipeline(TaskPipeline):
 
     def start(self):
         while True:
-            common.get_logger().info(456)
+            # common.get_logger().info(456)
             time.sleep(2)
 
     def execute(self, doc: Document):

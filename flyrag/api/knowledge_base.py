@@ -7,22 +7,39 @@ from fastapi import APIRouter, Query
 from fastapi.params import Depends
 from sqlmodel import Session, select
 
+import common
 from flyrag.api import R
-from flyrag.api.entity import KnowledgeBase, KnowledgeBaseUpdate, DeleteEntity, KnowledgeBaseQuery
+from flyrag.api.entity import KnowledgeBase, KnowledgeBaseUpdate, DeleteEntity, KnowledgeBaseQuery, KnowledgeCreate
 from common.mysql_client import MysqlClient
 
 router = APIRouter(prefix='/kb', tags=["knowledge_base"])
 SessionDep = Annotated[Session, Depends(MysqlClient().get_session)]
+
+
 @router.post("/create")
-async def create_kb(kb: KnowledgeBase, session: SessionDep):
-    session.add(kb)
-    session.commit()
+async def create_kb(kb_create: KnowledgeCreate, session: SessionDep):
+    if not kb_create.name:
+        return R.fail('知识库名称不能为空')
+    try:
+        if kb_create.docs and len(kb_create.docs) > 0:
+            # 调用创建文档的方法
+            # await create_doc(kb_create.docs, session)
+            pass
+        session.add(kb_create.get_kb())
+
+        session.commit()
+    except Exception as e:
+        common.get_logger().error(e)
+        session.rollback()
+        return R.fail('创建失败')
     return R.ok('创建成功')
+
 
 @router.get("/fetch")
 async def fetch_kb(id: int, session: SessionDep):
     kb = session.get(KnowledgeBase, id)
     return R.ok(data=kb)
+
 
 @router.post("/update")
 async def update_kb(kb: KnowledgeBaseUpdate, session: SessionDep):
@@ -37,8 +54,9 @@ async def update_kb(kb: KnowledgeBaseUpdate, session: SessionDep):
     session.commit()
     return R.ok('更新成功')
 
+
 @router.post("/delete")
-async def delete_kb(kb : DeleteEntity, session: SessionDep):
+async def delete_kb(kb: DeleteEntity, session: SessionDep):
     if not kb.id:
         return R.fail('id不能为空')
     kb_db = session.get(KnowledgeBase, kb.id)
@@ -49,9 +67,11 @@ async def delete_kb(kb : DeleteEntity, session: SessionDep):
     session.commit()
     return R.ok('删除成功')
 
+
 @router.post("/list")
-async def list_kb(kb: KnowledgeBaseQuery, session: SessionDep, offset: int = 0,
-    limit: Annotated[int, Query(le=100)] = 100):
+async def list_kb(kb: KnowledgeBaseQuery, session: SessionDep, current: int = 1,
+                  size: Annotated[int, Query(le=100)] = 100):
+    offset, limit = (current - 1) * size, size
     statement = MysqlClient.fill_statement(select(KnowledgeBase).offset(offset).limit(limit), KnowledgeBase, kb)
     # 如果有自定义查询字段，请在此自行添加
     kbs = session.exec(statement).all()
