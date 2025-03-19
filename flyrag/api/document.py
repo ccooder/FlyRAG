@@ -11,6 +11,7 @@ from sqlalchemy import func
 from sqlalchemy.sql.coercions import expect
 from sqlmodel import Session, select, col
 
+import common
 from flyrag.api import R
 from flyrag.api.entity import DocumentCreate, KnowledgeBase
 from common.mysql_client import MysqlClient
@@ -34,12 +35,10 @@ async def create_doc(doc_create: DocumentCreate, session: SessionDep):
         kb = session.exec(select(func.count(col(KnowledgeBase.id))).where(KnowledgeBase.id == doc_create.kb_id)).one()
         if kb == 0:
             return R.fail('知识库不存在')
-
         DocumentService.create_docs(session, doc_create.kb_id, doc_create.docs)
-        deepcopy_docs = deepcopy(doc_create.docs)
         session.commit()
     except Exception as e:
+        common.get_logger().error('创建文档时报错{}', e)
         session.rollback()
-    asyncio.create_task(TaskDispatcher.dispatch_document(deepcopy_docs, DocumentTaskStatus.CHUNKING))
 
     return R.ok('文档添加成功')

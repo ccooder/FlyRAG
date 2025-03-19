@@ -22,13 +22,12 @@ async def create_kb(kb_create: KnowledgeCreate, session: SessionDep):
     if not kb_create.name:
         return R.fail('知识库名称不能为空')
     try:
-        if kb_create.docs and len(kb_create.docs) > 0:
-            DocumentService.create_docs(session, kb_create.kb_id, kb_create.docs)
         session.add(kb_create.get_kb())
-
+        if kb_create.docs and len(kb_create.docs) > 0:
+            DocumentService.create_docs(session, kb_create.id, kb_create.docs)
         session.commit()
     except Exception as e:
-        common.get_logger().error(e)
+        common.get_logger().error("创建知识库报错:{}", e)
         session.rollback()
         return R.fail('创建失败')
     return R.ok('创建成功')

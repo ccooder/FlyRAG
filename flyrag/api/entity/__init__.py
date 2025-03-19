@@ -88,7 +88,7 @@ class KnowledgeCreate(Entity):
     docs: List[Document] = Field(default=None)
 
     def get_kb(self):
-        return KnowledgeBase(**self.model_dump(exclude_unset=True))
+        return KnowledgeBase(**self.model_dump())
 
 
 class KnowledgeBaseUpdate(UpdateEntity):
