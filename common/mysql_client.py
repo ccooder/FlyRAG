@@ -41,8 +41,8 @@ class MysqlClient(object):
             statement = statement.where(cls.id == qe.id)
         if qe.status:
             statement = statement.where(cls.status == qe.status)
-        if qe.is_deleted:
-            statement = statement.where(cls.status == qe.is_deleted)
+        if qe.is_deleted is not None:
+            statement = statement.where(cls.is_deleted == qe.is_deleted)
         if qe.start_time:
             statement = statement.where(cls.create_time >= qe.start_time)
         if qe.end_time:
