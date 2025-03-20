@@ -5,11 +5,13 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query
 from fastapi.params import Depends
+from sqlalchemy import update
 from sqlmodel import Session, select
 
 import common
 from flyrag.api import R
-from flyrag.api.entity import KnowledgeBase, KnowledgeBaseUpdate, DeleteEntity, KnowledgeBaseQuery, KnowledgeCreate
+from flyrag.api.entity import KnowledgeBase, KnowledgeBaseUpdate, DeleteEntity, KnowledgeBaseQuery, KnowledgeBaseCreate, \
+    Document
 from common.mysql_client import MysqlClient
 from flyrag.api.service.document_service import DocumentService
 
@@ -18,13 +20,13 @@ SessionDep = Annotated[Session, Depends(MysqlClient().get_session)]
 
 
 @router.post("/create")
-async def create_kb(kb_create: KnowledgeCreate, session: SessionDep):
+async def create_kb(kb_create: KnowledgeBaseCreate, session: SessionDep):
     if not kb_create.name:
         return R.fail('知识库名称不能为空')
     try:
         session.add(kb_create.get_kb())
         if kb_create.docs and len(kb_create.docs) > 0:
-            DocumentService.create_docs(session, kb_create.id, kb_create.docs)
+            DocumentService.create_docs(kb_create.id, kb_create.docs, session)
         session.commit()
     except Exception as e:
         common.get_logger().error("创建知识库报错:{}", e)
@@ -62,6 +64,8 @@ async def delete_kb(kb: DeleteEntity, session: SessionDep):
         return R.fail('知识库不存在')
     kb_db.sqlmodel_update(kb)
     session.add(kb_db)
+    # 删除知识库下的所有文档
+    session.exec(update(Document).where(Document.kb_id == kb.id).values(is_deleted = 1))
     session.commit()
     return R.ok('删除成功')
 

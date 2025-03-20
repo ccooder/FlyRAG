@@ -2,7 +2,7 @@
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/14 11:11
 from datetime import datetime
-from typing import List
+from typing import List, Union
 
 import pydantic
 from pydantic import ConfigDict, BaseModel
@@ -16,8 +16,8 @@ name = "entity"
 # 序列化
 model_config = ConfigDict(
     from_attributes=True,
-    json_encoders={datetime: lambda dt: dt.strftime("%Y-%m-%d %H:%M:%S"),
-                   int: lambda o: o if o < 0x20000000000000 else str(o)}
+    json_encoders={datetime: lambda dt: '' if dt is None else dt.strftime("%Y-%m-%d %H:%M:%S"),
+                   int: lambda o: '' if o is None else o if o < 0x20000000000000 else str(o)}
 )
 
 
@@ -51,11 +51,11 @@ class QueryEntity(SQLModel):
 # 文档
 class Document(Entity, table=True):
     """
-    知识库实体
+    文档实体
     """
     __tablename__ = 'fr_document'
     model_config = model_config
-    kb_id: int = Field(default=None, alias="kbId")
+    kb_id: int = Field(default=None)
     name: str = Field(default=None)
     original_name: str = Field(default=None)
     size: int = Field(default=None)
@@ -64,11 +64,22 @@ class Document(Entity, table=True):
 
 class DocumentCreate(BaseModel):
     """
-    知识库实体
+    文档实体-创建
     """
     kb_id: int = pydantic.Field(..., alias="kbId")
     docs: List[Document] = Field(default=None)
 
+class DocumentQuery(QueryEntity):
+    """
+    文档实体-查询
+    """
+    kb_id: int = Field(...)
+
+class DocumentUpdate(UpdateEntity):
+    """
+    文档实体-更新
+    """
+    name: str = Field(...)
 
 # 知识库
 class KnowledgeBase(Entity, table=True):
@@ -79,7 +90,7 @@ class KnowledgeBase(Entity, table=True):
     name: str = Field(default=None, max_length=64)
     profile: str = Field(default=None, max_length=255)
 
-class KnowledgeCreate(Entity):
+class KnowledgeBaseCreate(Entity):
     """
     知识库实体
     """
@@ -106,5 +117,39 @@ class KnowledgeBaseQuery(QueryEntity):
     name: str = Field(default=None, max_length=64)
     profile: str = Field(default=None, max_length=255)
 
+
+# 切片配置
+class ChunkConfig(Entity, table=True):
+    """
+    切片配置实体
+    """
+    __tablename__ = 'fr_chunk_config'
+    target_id: int = Field(...)
+    type: int = Field(default=None)
+    embedding_model_id: int = Field(...)
+    mode: int = Field(default=1)
+    chunk_size: int = Field(default=512)
+    chunk_overlap: int = Field(default=200)
+    delimiters: str = Field(default='\n\n')
+
+
+# 模型
+class Model(Entity, table=True):
+    """
+    模型实体
+    """
+    __tablename__ = 'fr_model'
+    name: str = Field(default=None, max_length=64)
+    uid: str = Field(default=None, max_length=32)
+    base_url: str = Field(default=None, max_length=255)
+    api_key: str = Field(default=None, max_length=255)
+    context_length: int = Field(default=4096)
+    type: int = Field(default=1)
+
+class ModelQuery(QueryEntity):
+    """
+    模型实体-查询
+    """
+    type: int = Field(default=1)
 
 

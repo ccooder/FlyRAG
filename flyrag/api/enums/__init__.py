@@ -8,3 +8,7 @@ class DocumentStatus(Enum):
     INDEXING = 2,
     AVAILABLE = 3,
     DISABLED = 0
+
+class ChunkConfigType(Enum):
+    KNOWLEDGE_BASE = 1,
+    DOCUMENT = 2
