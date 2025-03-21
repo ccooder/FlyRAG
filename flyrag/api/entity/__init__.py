@@ -79,7 +79,22 @@ class DocumentUpdate(UpdateEntity):
     """
     文档实体-更新
     """
-    name: str = Field(...)
+    name: str = Field(default=None)
+    mode: int = Field(default=None)
+
+# 切片配置
+class ChunkConfig(Entity, table=True):
+    """
+    切片配置实体
+    """
+    __tablename__ = 'fr_chunk_config'
+    target_id: int = Field(default=None)
+    type: int = Field(default=None)
+    embedding_model_id: int = Field(...)
+    mode: int = Field(default=1)
+    chunk_size: int = Field(default=512)
+    chunk_overlap: int = Field(default=200)
+    delimiters: str = Field(default='\n\n')
 
 # 知识库
 class KnowledgeBase(Entity, table=True):
@@ -97,6 +112,8 @@ class KnowledgeBaseCreate(Entity):
     name: str = Field(default=None, max_length=64)
     profile: str = Field(default=None, max_length=255)
     docs: List[Document] = Field(default=None)
+    chunk_config: ChunkConfig = Field(default=None)
+
 
     def get_kb(self):
         return KnowledgeBase(**self.model_dump())
@@ -116,21 +133,6 @@ class KnowledgeBaseQuery(QueryEntity):
     """
     name: str = Field(default=None, max_length=64)
     profile: str = Field(default=None, max_length=255)
-
-
-# 切片配置
-class ChunkConfig(Entity, table=True):
-    """
-    切片配置实体
-    """
-    __tablename__ = 'fr_chunk_config'
-    target_id: int = Field(...)
-    type: int = Field(default=None)
-    embedding_model_id: int = Field(...)
-    mode: int = Field(default=1)
-    chunk_size: int = Field(default=512)
-    chunk_overlap: int = Field(default=200)
-    delimiters: str = Field(default='\n\n')
 
 
 # 模型

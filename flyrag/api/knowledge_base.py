@@ -23,8 +23,13 @@ SessionDep = Annotated[Session, Depends(MysqlClient().get_session)]
 async def create_kb(kb_create: KnowledgeBaseCreate, session: SessionDep):
     if not kb_create.name:
         return R.fail('知识库名称不能为空')
+    if not kb_create.chunk_config:
+        return R.fail('知识库配置不能为空')
     try:
         session.add(kb_create.get_kb())
+        chunk_config = kb_create.chunk_config
+        chunk_config.target_id = kb_create.get_kb().id
+        session.add(chunk_config)
         if kb_create.docs and len(kb_create.docs) > 0:
             DocumentService.create_docs(kb_create.id, kb_create.docs, session)
         session.commit()

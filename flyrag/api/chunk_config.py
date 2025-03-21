@@ -32,13 +32,14 @@ async def create_cc(cc: ChunkConfig, session: SessionDep):
             doc = DocumentService.get_doc(cc.target_id, session)
             if not doc:
                 return R.fail('文档不存在')
-            # 查询是否存在知识库级的配置，如没有，使用文档的配置
-            config = session.exec(
-                select(func.count(col(ChunkConfig.id))).where(ChunkConfig.target_id == doc.kb_id)).one()
-            if config == 0:
-                cc_kb = deepcopy(cc)
-                cc_kb.target_id = doc.kb_id
-                session.add(cc_kb)
+            # # 查询是否存在知识库级的配置，如没有，使用文档的配置 实际场景中知识库的配置是最先设置的
+            # config = session.exec(
+            #     select(func.count(col(ChunkConfig.id))).where(ChunkConfig.target_id == doc.kb_id)).one()
+            # if config == 0:
+            #     cc_kb = deepcopy(cc)
+            #     cc_kb.target_id = doc.kb_id
+            #     session.add(cc_kb)
+
         # 若已存在该配置，则更新
         cc_in_db = session.exec(select(ChunkConfig).where(ChunkConfig.target_id == cc.target_id)).all()
         if len(cc_in_db) > 1:
