@@ -1,10 +1,13 @@
 #! /usr/bin/python
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/17 15:00
+import json
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 
-from flyrag.api.entity import Entity
+from common.mysql_client import MysqlClient
+from common.redis_client import RedisClient
+from flyrag.api.entity import Entity, Document
 
 name = 'task'
 
@@ -21,8 +24,24 @@ class TaskPipeline(ABC):
         pass
 
     @abstractmethod
-    def execute(self, task: Entity):
+    def execute(self, task: str):
         pass
+
+    async def is_pause(self, task: str, pipeline_name):
+        session = next(MysqlClient().get_session())
+        redis = RedisClient().get_redis()
+        doc = Document(**json.loads(task))
+        doc_db = session.get(Document, doc.id)
+        if doc_db.pause == 1:
+            print("任务暂停暂时放回队列底部")
+            # 若任务暂停放回队列底部并且将执行中的数量-1
+            pipeline = redis.pipeline()
+            pipeline.multi()
+            await pipeline.lpush(REDIS_KEY_PIPELINE_QUEUE.format(pipeline_name), task)
+            await pipeline.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(pipeline_name))
+            await pipeline.execute()
+            return True
+        return False
 
 
 class DocumentTaskStatus(Enum):
