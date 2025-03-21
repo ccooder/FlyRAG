@@ -4,11 +4,11 @@
 from enum import Enum, auto
 
 class DocumentStatus(Enum):
-    QUEUEING = 1,
-    INDEXING = 2,
-    AVAILABLE = 3,
+    QUEUEING = 1
+    INDEXING = 2
+    AVAILABLE = 3
     DISABLED = 0
 
 class ChunkConfigType(Enum):
-    KNOWLEDGE_BASE = 1,
+    KNOWLEDGE_BASE = 1
     DOCUMENT = 2

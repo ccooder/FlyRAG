@@ -58,9 +58,11 @@ class Document(Entity, table=True):
     kb_id: int = Field(default=None)
     name: str = Field(default=None)
     original_name: str = Field(default=None)
+    chunk_mode: int = Field(default=None)
     size: int = Field(default=None)
     obj_name: str = Field(default=None)
     char_count: int = Field(default=0)
+    pause: int = Field(default=0)
 
 class DocumentCreate(BaseModel):
     """

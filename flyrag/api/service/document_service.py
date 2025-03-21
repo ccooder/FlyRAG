@@ -22,6 +22,7 @@ class DocumentService(object):
         doc_ccs = []
         for doc in docs:
             doc.kb_id = kb_id
+            doc.chunk_mode = cc.mode
             doc_cc = ChunkConfig(**cc.model_dump(exclude=['id']))
             doc_cc.target_id = doc.id
             doc_ccs.append(doc_cc)

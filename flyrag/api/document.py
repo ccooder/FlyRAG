@@ -14,6 +14,7 @@ import common
 from flyrag.api import R
 from flyrag.api.entity import DocumentCreate, KnowledgeBase, DocumentQuery, Document, DocumentUpdate, DeleteEntity
 from common.mysql_client import MysqlClient
+from flyrag.api.enums import DocumentStatus
 from flyrag.api.service.document_service import DocumentService
 
 router = APIRouter(prefix='/document', tags=["document"])
@@ -23,7 +24,6 @@ SessionDep = Annotated[Session, Depends(MysqlClient().get_session)]
 
 @router.post("/create")
 async def create_doc(doc_create: DocumentCreate, session: SessionDep):
-
     try:
         if len(doc_create.docs) == 0:
             return R.fail('文档数量不能为0')
@@ -40,6 +40,7 @@ async def create_doc(doc_create: DocumentCreate, session: SessionDep):
 
     return R.ok('文档添加成功')
 
+
 @router.post("/update")
 async def update_doc(doc: DocumentUpdate, session: SessionDep):
     if not doc.id:
@@ -52,6 +53,7 @@ async def update_doc(doc: DocumentUpdate, session: SessionDep):
     session.add(doc_in_db)
     session.commit()
     return R.ok('更新成功')
+
 
 @router.post("/delete")
 async def delete_doc(doc: DeleteEntity, session: SessionDep):
@@ -66,9 +68,41 @@ async def delete_doc(doc: DeleteEntity, session: SessionDep):
     return R.ok('删除成功')
 
 
+@router.post("/pause")
+async def pause(id: int, session: SessionDep):
+    doc_db = session.get(Document, id)
+    print(DocumentStatus.QUEUEING.value)
+    if not doc_db:
+        return R.fail('文档不存在')
+    if doc_db.pause == 1:
+        return R.fail('不可重复暂停')
+    if doc_db.status != DocumentStatus.QUEUEING.value and doc_db.status != DocumentStatus.INDEXING.value:
+        return R.fail('文档未在处理中，不可暂停')
+    if doc_db.pause == 0:
+        doc = Document(id=doc_db.id, pause=1)
+        doc_db.sqlmodel_update(doc.model_dump(exclude_unset=True))
+        session.add(doc_db)
+        session.commit()
+        return R.ok('暂停成功')
+
+
+@router.post("/resume")
+async def resume(id: int, session: SessionDep):
+    doc_db = session.get(Document, id)
+    if not doc_db:
+        return R.fail('文档不存在')
+    if doc_db.pause == 0:
+        return R.fail('文档未暂停')
+    if doc_db.pause == 1:
+        doc = Document(id=doc_db.id, pause=0)
+        doc_db.sqlmodel_update(doc.model_dump(exclude_unset=True))
+        session.add(doc_db)
+        session.commit()
+        return R.ok('恢复成功')
+
 @router.post("/list")
 async def list_doc(doc_query: DocumentQuery, session: SessionDep, current: int = 1,
-                  size: Annotated[int, Query(le=100)] = 100):
+                   size: Annotated[int, Query(le=100)] = 100):
     offset, limit = (current - 1) * size, size
     statement = MysqlClient.fill_statement(select(Document).offset(offset).limit(limit), Document, doc_query)
     # 如果有自定义查询字段，请在此自行添加
