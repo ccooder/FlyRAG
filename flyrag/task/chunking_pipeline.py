@@ -1,6 +1,7 @@
 #! /usr/bin/python
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/17 15:12
+import json
 import time
 
 from redis.asyncio import Redis
@@ -54,5 +55,7 @@ class ChunkingPipeline(TaskPipeline):
 
     def execute(self, doc: Document):
         # TODO NFL 切片的逻辑
+        doc = Document(**json.loads(doc))
         print('切片逻辑', doc)
+        time.sleep(30)
         pass

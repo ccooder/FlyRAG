@@ -7,14 +7,13 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from common.redis_client import RedisClient
-from flyrag.api import document, knowledge_base
+from flyrag.api import document, knowledge_base, model, chunk_config
 from flyrag.api import file
 from flyrag.task.task_dispatcher import TaskDispatcher
 
 
 async def startup():
     await TaskDispatcher.start_pipeline()
-
 
 
 async def shutdown():
@@ -36,7 +35,7 @@ app = FastAPI(lifespan=lifespan)
 # 添加 CORS 中间件（可选）
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:5173"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -44,6 +43,8 @@ app.add_middleware(
 app.include_router(file.router)
 app.include_router(knowledge_base.router)
 app.include_router(document.router)
+app.include_router(model.router)
+app.include_router(chunk_config.router)
 
 if __name__ == '__main__':
     import uvicorn
