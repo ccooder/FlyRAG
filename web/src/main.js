@@ -8,9 +8,9 @@
  * @Copyright 版权声明
  */
 import { createApp } from 'vue'
-import './styles/index.scss'
 import Antd from 'ant-design-vue'
 import 'ant-design-vue/dist/reset.css'
+import './styles/index.scss'
 import App from './App.vue'
 
 // 路由

@@ -1,84 +1,49 @@
 <!--
  * @Author: WuFeng <763467339@qq.com>
- * @Date: 2024-06-05 23:50:49
- * @LastEditTime: 2025-03-20 12:12:43
+ * @Date: 2025-03-20 20:35:12
+ * @LastEditTime: 2025-03-20 21:29:20
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
- * @FilePath: \FlyRAG\web\src\pages\datasets\page\entry\components\CreateDrawer.vue
+ * @FilePath: \FlyRAG\web\src\pages\datasets\page\entry\components\Documents\CreateDrawer.vue
  * Copyright 版权声明
 -->
 <template>
-  <a-drawer :title="titleMap[handleType]" :size="`large`" :open="open" @close="onClose" width="100%">
+  <a-drawer :title="titleMap[handleType]" :size="`large`" :open="open" @close="onClose" width="30%">
     <template #extra>
-      <a-space>
-        <a-button @click="onClose">关闭</a-button>
-        <!-- <a-button @click="onResetForm">重置</a-button> -->
-        <template v-if="handleType === 'create'">
-          <a-button type="primary" @click="onSubmitStep1" v-if="currentStep === 0">
-            下一步
-            <SwapRightOutlined />
-          </a-button>
-          <template v-if="currentStep === 1">
-            <a-button type="primary" @click="currentStep = 0">
-              上一步
-              <SwapLeftOutlined />
-            </a-button>
-            <a-button type="primary" @click="onSubmitStep2">
-              保存并处理
+      <a-spin :tip="spinningConfig.tip" :spinning="spinningConfig.spinning">
+        <a-space>
+          <a-button @click="onClose">关闭</a-button>
+          <template v-if="handleType === 'create'">
+            <a-button type="primary" @click="onSubmitCreate">
+              保存
             </a-button>
           </template>
-        </template>
-        <template v-if="handleType === 'update'">
-          <a-button type="primary" @click="onSubmitUpdate">
-            保存
-          </a-button>
-        </template>
-      </a-space>
+          <template v-if="handleType === 'update'">
+            <a-button type="primary" @click="onSubmitUpdate">
+              保存
+            </a-button>
+          </template>
+        </a-space>
+      </a-spin>
     </template>
 
     <a-spin :tip="spinningConfig.tip" :spinning="spinningConfig.spinning">
-      <div style="width: 500px; margin: 0 auto 30px;" v-if="handleType === 'create'">
-        <a-steps
-          v-model:current="currentStep"
-          size="small"
-          :items="[
-            {
-              title: '选择数据源',
-            },
-            {
-              title: '文本分段与清洗',
-            },
-            {
-              title: '文本分段与清洗',
-            },
-          ]"
-        ></a-steps>
-      </div>
-
       <a-form
-        v-if="currentStep === 0"
         ref="formRef"
         layout="vertical"
         name="custom-validation"
         :model="formData"
         :rules="rules"
         v-bind="{
-          labelCol: { span: 3 },
-          wrapperCol: { span: 24 }
+          // labelCol: { span: 3 },
+          // wrapperCol: { span: 24 }
         }"
       >
-        <!-- @finish="handleFinish"
-        @validate="handleValidate"
-        @finishFailed="handleFinishFailed" -->
-        <a-form-item has-feedback label="知识库名称" name="name">
-          <a-input v-model:value="formData.name" placeholder="请输入知识库名称" />
-        </a-form-item>
-        <a-form-item has-feedback label="知识库描述" name="profile">
-          <a-textarea :show-count="true" :auto-size="{ minRows: 3, maxRows: 5 }" placeholder="请输入知识库描述" v-model:value="formData.profile" />
+        <a-form-item has-feedback label="名称" name="name" v-if="handleType === 'update'">
+          <a-input v-model:value="formData.name" placeholder="请输入名称" />
         </a-form-item>
         <template v-if="handleType === 'create'">
           <a-form-item has-feedback label="上传文本文件" name="fileList">
-            <!-- accept=".png,.jpg,.jpeg" -->
             <a-upload-dragger
               v-if="formData.fileList.length === 0"
               v-model:fileList="formData.fileList"
@@ -122,12 +87,13 @@
 </template>
 
 <script setup name="CreateDrawer">
-import { ref, reactive, defineExpose, toRaw, defineEmits } from 'vue'
+import { ref, reactive, defineExpose, defineEmits } from 'vue'
 import { message } from 'ant-design-vue'
 
-import { SwapRightOutlined, SwapLeftOutlined, InboxOutlined, FileOutlined, DeleteOutlined } from '@ant-design/icons-vue'
+import { InboxOutlined, FileOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 
-import { saveCreate, saveUpdate, uploadDoc } from '@/api/kb'
+import { uploadDoc } from '@/api/kb'
+import { saveCreate, saveUpdate } from '@/api/documents'
 
 const emit = defineEmits([
   'close'
@@ -143,25 +109,20 @@ const spinningConfig = reactive({
 const open = ref(false)
 // 标题
 const titleMap = {
-  'create': '创建知识库',
-  'update': '编辑知识库'
+  'create': '添加文件',
+  'update': '文件重命名'
 }
 // 操作类型
 const handleType = ref('create')
 
-// 当前步骤
-const currentStep = ref(0)
-
 const formRef = ref(null)
 
 const rules = {
-  name: [{ required: true, message: '请输入知识库名称', trigger: 'change' }],
-  profile: [{ required: true, message: '请输入知识库描述', trigger: 'change' }],
+  name: [{ required: true, message: '请输入名称', trigger: 'change' }],
   fileList: [{ required: true, message: '请上传文件', trigger: 'change' }]
 }
 const formData = ref({
   name: '',
-  profile: '',
   fileList: [],
   docs: [
     // {
@@ -252,8 +213,13 @@ const customRequest = async ({ action, file, onSuccess, onError }) => {
 // 抽屉显示
 const onShow = ({ type = 'create', row = {} }) => {
   handleType.value = type
-  currentStep.value = 0
-  formData.value = Object.assign({}, formData.value, JSON.parse(JSON.stringify(row)))
+  if (type === 'create') {
+    formData.value.kbId = row.kbId
+  }
+  if (type === 'update') {
+    formData.value = Object.assign({}, formData.value, JSON.parse(JSON.stringify(row)))
+    formData.value.fileList = []
+  }
   open.value = true
   formRef?.value?.resetFields()
 }
@@ -264,32 +230,23 @@ const onClose = () => {
   emit('close')
 }
 
-// 选择数据源
-const onSubmitStep1 = () => {
+// 添加文件
+const onSubmitCreate = () => {
   formRef?.value
     .validate()
     .then(async () => {
       spinningConfig.spinning = true
       try {
         formData.value.docs = formData.value.fileList.map(item => item.upData)
-        await saveCreate(formData.value)
+        await saveCreate({
+          kbId: formData.value.kbId,
+          docs: formData.value.docs
+        })
         spinningConfig.spinning = false
-        currentStep.value = 1
+        onClose()
       } catch (error) {
         spinningConfig.spinning = false
       }
-    })
-    .catch(error => {
-      console.log('error', error)
-    })
-}
-
-// 保存并处理
-const onSubmitStep2 = () => {
-  formRef?.value
-    .validate()
-    .then(() => {
-      console.log('values', formData, toRaw(formData))
     })
     .catch(error => {
       console.log('error', error)
@@ -303,7 +260,10 @@ const onSubmitUpdate = () => {
     .then(async () => {
       spinningConfig.spinning = true
       try {
-        await saveUpdate(formData.value)
+        await saveUpdate({
+          id: formData.value.id,
+          name: formData.value.name
+        })
         spinningConfig.spinning = false
         message.success(`编辑成功`)
         onClose()

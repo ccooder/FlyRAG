@@ -1,7 +1,7 @@
 /*
  * @Author: WuFeng <763467339@qq.com>
  * @Date: 2025-03-19 16:25:23
- * @LastEditTime: 2025-03-19 16:30:09
+ * @LastEditTime: 2025-03-19 17:17:35
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
  * @FilePath: \FlyRAG\web\src\utils\request.js
@@ -39,7 +39,7 @@ service.interceptors.response.use(
     if (typeof res.code === 'undefined') {
       return Promise.resolve(response)
     }
-    if (res.code === '200') {
+    if (res.code === 200) {
       return Promise.resolve(response.data)
     } else {
       if (!response.config.headers['Error-Echo']) {

@@ -1,10 +1,10 @@
 /*
  * @Author: WuFeng <763467339@qq.com>
- * @Date: 2025-03-19 16:31:22
- * @LastEditTime: 2025-03-20 17:00:31
+ * @Date: 2025-03-20 16:59:36
+ * @LastEditTime: 2025-03-20 17:05:29
  * @LastEditors: WuFeng <763467339@qq.com>
- * @Description: 知识库接口
- * @FilePath: \FlyRAG\web\src\api\kb.js
+ * @Description: 
+ * @FilePath: \FlyRAG\web\src\api\documents.js
  * @Copyright 版权声明
  */
 import request from '@/utils/request'
@@ -13,7 +13,7 @@ import request from '@/utils/request'
 export function getList(params = {}) {
   const data = params
   return request({
-    url: '/kb/list',
+    url: '/document/list',
     method: 'post',
     data
   })
@@ -22,7 +22,7 @@ export function getList(params = {}) {
 // 知识库 详情
 export function getDetail(params = {}) {
   return request({
-    url: '/kb/fetch',
+    url: '/document/fetch',
     method: 'get',
     params
   })
@@ -32,7 +32,7 @@ export function getDetail(params = {}) {
 export function saveCreate(params = {}) {
   const data = params
   return request({
-    url: '/kb/create',
+    url: '/document/create',
     method: 'post',
     data
   })
@@ -42,7 +42,7 @@ export function saveCreate(params = {}) {
 export function saveUpdate(params = {}) {
   const data = params
   return request({
-    url: '/kb/update',
+    url: '/document/update',
     method: 'post',
     data
   })
@@ -52,19 +52,8 @@ export function saveUpdate(params = {}) {
 export function saveDelete(params = {}) {
   const data = params
   return request({
-    url: '/kb/delete',
+    url: '/document/delete',
     method: 'post',
-    data
-  })
-}
-
-// 上传文件
-export function uploadDoc(params = {}) {
-  const data = params
-  return request({
-    url: '/file/upload',
-    method: 'post',
-    // responseType: 'blob',
     data
   })
 }
