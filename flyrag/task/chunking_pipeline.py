@@ -51,14 +51,14 @@ class ChunkingPipeline(TaskPipeline):
                 continue
 
             # 执行任务
-            self.execute(doc)
+            await self.execute(doc)
 
             # 休眠1秒
             time.sleep(1)
 
-    def execute(self, doc: str):
+    async def execute(self, doc: str):
         # TODO NFL 切片的逻辑
         doc = Document(**json.loads(doc))
-        print('切片逻辑', doc)
+
         time.sleep(30)
         pass

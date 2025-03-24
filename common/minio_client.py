@@ -1,6 +1,8 @@
 #! /usr/bin/python
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/13 21:43
+from datetime import timedelta
+
 import common
 import os
 from abc import ABC
@@ -96,17 +98,16 @@ class MinioClient(object):
             common.get_logger().error(f"Error uploading file: {e}")
             return False
 
-    def download_file(self, bucket_name, object_name, file_path):
+    def download_file(self, bucket_name, object_name, expires: timedelta =timedelta(hours=1)):
         """
         从存储桶下载文件
         :param bucket_name: 存储桶名称
         :param object_name: 对象名称（在存储桶中的名称）
-        :param file_path: 本地文件路径
+        :param expires: 链接有效期（默认一个小时）
         :return: 如果下载成功返回 True，否则返回 False
         """
         try:
-            self.__client.fget_object(bucket_name, object_name, file_path)
-            return True
+            return self.__client.presigned_get_object(bucket_name, object_name, expires)
         except S3Error as e:
             common.get_logger().error(f"Error downloading file: {e}")
             return False
@@ -137,3 +138,8 @@ class MinioClient(object):
         except S3Error as e:
             common.get_logger().error(f"Error listing objects: {e}")
             return []
+
+
+if __name__ == '__main__':
+    mc = MinioClient()
+    print(mc.download_file(common.DEFAULT_BUCKET_NAME, '20250324/07b1de0f-0898-11f0-9f94-dd7800b8a5b8.md'))

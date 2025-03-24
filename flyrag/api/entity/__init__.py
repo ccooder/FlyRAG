@@ -83,6 +83,7 @@ class DocumentUpdate(UpdateEntity):
     """
     name: str = Field(default=None)
     mode: int = Field(default=None)
+    status: int = Field(default=None)
 
 # 切片配置
 class ChunkConfig(Entity, table=True):
