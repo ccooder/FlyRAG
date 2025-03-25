@@ -1,7 +1,7 @@
 <!--
  * @Author: WuFeng <763467339@qq.com>
  * @Date: 2024-06-05 23:50:49
- * @LastEditTime: 2025-03-20 12:12:43
+ * @LastEditTime: 2025-03-25 14:39:59
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
  * @FilePath: \FlyRAG\web\src\pages\datasets\page\entry\components\CreateDrawer.vue
@@ -49,7 +49,7 @@
               title: '文本分段与清洗',
             },
             {
-              title: '文本分段与清洗',
+              title: '处理并完成',
             },
           ]"
         ></a-steps>
@@ -117,6 +117,47 @@
           </a-form-item>
         </template>
       </a-form>
+
+      
+      <a-form
+        v-if="currentStep === 1"
+        ref="formRef1"
+        :model="formData"
+        v-bind="{
+          labelCol: { span: 3 },
+          wrapperCol: { span: 14 }
+        }"
+      >
+        <a-form-item has-feedback label="向量模型" :name="['chunk_config', 'embedding_model_id']" :rules="[{ required: true, message: '请选择向量模型', trigger: 'change' }]">
+          <a-select
+            v-model:value="formData.chunk_config.embedding_model_id"
+            placeholder="请选择向量模型"
+            :options="modeList"
+            :field-names="{ label: 'name', value: 'id', options: 'children' }"
+          >
+          </a-select>
+        </a-form-item>
+        <a-form-item has-feedback label="分段模式" :name="['chunk_config', 'mode']" :rules="[{ required: true, message: '请选择分段模式', trigger: 'change' }]">
+          <a-select
+            v-model:value="formData.chunk_config.mode"
+            placeholder="请选择分段模式"
+          >
+            <a-select-option :value="1">通用</a-select-option>
+            <a-select-option :value="2" disabled>父子</a-select-option>
+            <a-select-option :value="3" disabled>混合</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item has-feedback label="分段标识符号" :name="['chunk_config', 'delimiters']" :rules="[{ required: true, message: '请输入分段标识符', trigger: 'change' }]">
+          <a-input v-model:value="formData.chunk_config.delimiters" placeholder="\n\n 用于分段；\n 用于分行" />
+        </a-form-item>
+        <a-form-item has-feedback label="分段最大长度" :name="['chunk_config', 'chunk_size']" :rules="[{ required: true, message: '请输入分段最大长度', trigger: 'change' }]">
+          <a-input v-model:value="formData.chunk_config.chunk_size" placeholder="≤ 4000" />
+        </a-form-item>
+        <a-form-item has-feedback label="分段重叠长度" :name="['chunk_config', 'chunk_overlap']" :rules="[{ required: true, message: '请输入分段重叠长度', trigger: 'change' }]">
+          <a-input v-model:value="formData.chunk_config.chunk_overlap" placeholder="分段重叠长度" />
+        </a-form-item>
+      </a-form>
+
     </a-spin>
   </a-drawer>
 </template>
@@ -128,6 +169,8 @@ import { message } from 'ant-design-vue'
 import { SwapRightOutlined, SwapLeftOutlined, InboxOutlined, FileOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 
 import { saveCreate, saveUpdate, uploadDoc } from '@/api/kb'
+
+import { getList as getModeList } from '@/api/mode'
 
 const emit = defineEmits([
   'close'
@@ -153,12 +196,14 @@ const handleType = ref('create')
 const currentStep = ref(0)
 
 const formRef = ref(null)
+const formRef1 = ref(null)
 
 const rules = {
   name: [{ required: true, message: '请输入知识库名称', trigger: 'change' }],
   profile: [{ required: true, message: '请输入知识库描述', trigger: 'change' }],
   fileList: [{ required: true, message: '请上传文件', trigger: 'change' }]
 }
+
 const formData = ref({
   name: '',
   profile: '',
@@ -170,7 +215,15 @@ const formData = ref({
     //   "size": 133026,
     //   "obj_name": "fly-rag/ae8a84e2-0492-11f0-b5e6-d651885abef6.pdf"
     // }
-  ]
+  ],
+  chunk_config: {
+    type: 1, // 1: 知识库 2: 文档
+    embedding_model_id: '', // 向量模型
+    mode: 1, // 分段模式 1: 通用 2: 父子 3: 混合
+    chunk_size: '500', // 分段最大长度
+    chunk_overlap: '200', // 分段重叠长度
+    delimiters: '\\n\\n' // 分段标识符号
+  }
 })
 
 const handleRemove = (file) => {
@@ -222,9 +275,7 @@ const customRequest = async ({ action, file, onSuccess, onError }) => {
     subData.append('files', file)
     try {
       const res = await uploadDoc(subData)
-      console.log(`🚀 ~ customRequest ~ res:`, res)
       const resData = res?.data[0]??{}
-      console.log(`🚀 ~ customRequest ~ resData:`, resData)
       formData.value.fileList.forEach((item, index) => {
         if (typeof item.upData === 'undefined') {
           item.upData = {}
@@ -253,7 +304,23 @@ const customRequest = async ({ action, file, onSuccess, onError }) => {
 const onShow = ({ type = 'create', row = {} }) => {
   handleType.value = type
   currentStep.value = 0
-  formData.value = Object.assign({}, formData.value, JSON.parse(JSON.stringify(row)))
+  formData.value = {
+    name: '',
+    profile: '',
+    fileList: [],
+    docs: [],
+    chunk_config: {
+      type: 1, // 1: 知识库 2: 文档
+      embedding_model_id: '', // 向量模型
+      mode: 1, // 分段模式 1: 通用 2: 父子 3: 混合
+      chunk_size: '500', // 分段最大长度
+      chunk_overlap: '200', // 分段重叠长度
+      delimiters: '\\n\\n' // 分段标识符号
+    }
+  }
+  if (type !== 'create') {
+    formData.value = Object.assign({}, formData.value, JSON.parse(JSON.stringify(row)))
+  }
   open.value = true
   formRef?.value?.resetFields()
 }
@@ -272,7 +339,7 @@ const onSubmitStep1 = () => {
       spinningConfig.spinning = true
       try {
         formData.value.docs = formData.value.fileList.map(item => item.upData)
-        await saveCreate(formData.value)
+        await getModeListData()
         spinningConfig.spinning = false
         currentStep.value = 1
       } catch (error) {
@@ -286,14 +353,36 @@ const onSubmitStep1 = () => {
 
 // 保存并处理
 const onSubmitStep2 = () => {
-  formRef?.value
+  formRef1?.value
     .validate()
-    .then(() => {
-      console.log('values', formData, toRaw(formData))
+    .then(async () => {
+      spinningConfig.spinning = true
+      try {
+        await saveCreate(formData.value)
+        spinningConfig.spinning = false
+        currentStep.value = 2
+        onClose()
+      } catch (error) {
+        spinningConfig.spinning = false
+      }
     })
     .catch(error => {
       console.log('error', error)
     })
+}
+
+// 模型列表数据
+const modeList = ref([])
+
+// 获取模型列表
+const getModeListData = async () => {
+  try {
+    const res = await getModeList({
+      type: 2
+    })
+    modeList.value = res?.data??[]
+  } catch (error) {
+  }
 }
 
 // 编辑保存

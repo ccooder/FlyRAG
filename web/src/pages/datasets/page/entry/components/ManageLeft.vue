@@ -1,7 +1,7 @@
 <!--
  * @Author: WuFeng <763467339@qq.com>
  * @Date: 2025-03-20 15:36:08
- * @LastEditTime: 2025-03-20 17:10:25
+ * @LastEditTime: 2025-03-24 17:17:48
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
  * @FilePath: \FlyRAG\web\src\pages\datasets\page\entry\components\ManageLeft.vue
@@ -50,30 +50,35 @@ import { getDetail } from '@/api/kb'
 const router = useRouter()
 const route = useRoute()
 
-const selectedKeys = ref(['documents']);
+const selectedKeys = ref(['DatasetsDocuments']);
 const openKeys = ref([]);
 const items = ref([
   {
-    key: 'documents',
+    key: 'DatasetsDocuments',
     icon: () => h(MailOutlined),
     label: '文档',
     title: '文档',
   },
+  // {
+  //   key: 'hitTesting',
+  //   icon: () => h(CalendarOutlined),
+  //   label: '召回测试',
+  //   title: '召回测试',
+  // },
   {
-    key: 'hitTesting',
-    icon: () => h(CalendarOutlined),
-    label: '召回测试',
-    title: '召回测试',
-  },
-  {
-    key: 'settings',
+    key: 'DatasetsSettings',
     icon: () => h(SettingOutlined),
     label: '设置',
     title: '设置',
   }
 ])
 const handleClick = menuInfo => {
-  console.log('click ', menuInfo);
+  router.push({
+    name: menuInfo.key,
+    params: {
+      kbId: route.params.kbId
+    }
+  })
 }
 
 
@@ -101,6 +106,13 @@ const loadData = async () => {
 }
 
 onMounted(() => {
+  switch (route.name) {
+    case 'DatasetsDocumentsSettings':
+      selectedKeys.value = ['DatasetsDocuments']
+      break
+    default:
+      selectedKeys.value = [route.name]
+  }
   kbId.value = route.params.kbId??''
   loadData()
 })
