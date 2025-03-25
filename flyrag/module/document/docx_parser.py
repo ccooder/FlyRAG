@@ -7,5 +7,6 @@ from langchain_community.document_loaders import Docx2txtLoader
 
 class DocxParser(BaseParser):
     def parse(self):
+
         doc = Docx2txtLoader(self.file).load()
         return doc[0].page_content

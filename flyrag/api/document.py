@@ -48,6 +48,15 @@ async def update_doc(doc: DocumentUpdate, session: SessionDep):
     doc_in_db = session.get(Document, doc.id)
     if not doc_in_db:
         return R.fail('文档不存在')
+    if doc.status:
+        if doc.status != DocumentStatus.DISABLED.value and doc.status != DocumentStatus.AVAILABLE.value:
+            return R.fail('只可禁用启用')
+        if doc_in_db.status != DocumentStatus.DISABLED.value and doc_in_db.status != DocumentStatus.AVAILABLE.value:
+            return R.fail('文档正在索引，不可更改')
+        if doc.status == DocumentStatus.AVAILABLE.value and doc_in_db.status != DocumentStatus.DISABLED.value:
+            return R.fail('文档未禁用，不可启用')
+        if doc.status == DocumentStatus.DISABLED.value and doc_in_db.status != DocumentStatus.AVAILABLE.value:
+            return R.fail('文档未启用，不可禁用')
     doc_data = doc.model_dump(exclude_unset=True)
     doc_in_db.sqlmodel_update(doc_data)
     session.add(doc_in_db)
