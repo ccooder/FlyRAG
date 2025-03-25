@@ -1,7 +1,7 @@
 <!--
  * @Author: WuFeng <763467339@qq.com>
  * @Date: 2025-03-20 14:21:13
- * @LastEditTime: 2025-03-20 21:27:23
+ * @LastEditTime: 2025-03-25 10:43:04
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
  * @FilePath: \FlyRAG\web\src\pages\datasets\page\entry\documents.vue
@@ -29,39 +29,92 @@
         <div class="dataTable">
           <a-table :dataSource="listState.data" :columns="listState.columns">
             <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'chunk_mode'">
+                <span>
+                  <a-tag
+                    v-if="record.chunk_mode === 1"
+                  >
+                    通用
+                  </a-tag>
+                  <a-tag
+                    v-if="record.chunk_mode === 2"
+                  >
+                    父子
+                  </a-tag>
+                  <a-tag
+                    v-if="record.chunk_mode === 3"
+                  >
+                    混合
+                  </a-tag>
+                </span>
+              </template>
               <template v-if="column.key === 'status'">
                 <span>
                   <a-tag
                     v-if="record.status === 3"
                     color="success"
                   >
-                    启用
+                    可用
                   </a-tag>
                   <a-tag
-                    v-if="record.status === 0"
+                    v-else-if="record.status === 0"
                     color="error"
                   >
                     禁用
                   </a-tag>
                   <a-tag
-                    v-if="record.status === 1"
+                    v-else-if="record.status === 1 && record.pause === 0"
                     color="warning"
                   >
                     排队中
                   </a-tag>
                   <a-tag
-                    v-if="record.status === 2"
+                    v-else-if="record.status === 2 && record.pause === 0"
                     color="processing"
                   >
                     索引中
                   </a-tag>
+
+                  <a-tag 
+                    v-if="record.pause === 1"
+                    color="error"
+                  >
+                    已暂停
+                  </a-tag>
+                  
+                  <a-popconfirm
+                    v-if="(record.status === 1 || record.status === 2) && record.pause === 0"
+                    title="您确定要暂停吗？"
+                    @confirm="confirmPause(record)"
+                  >
+                    <a-divider type="vertical" />
+                    <StopOutlined title="暂停" style="color: #ff4d4f;font-size: 16px;cursor: pointer;" />
+                  </a-popconfirm>
+                  
+                  <a-popconfirm
+                    v-if="(record.status === 1 || record.status === 2) && record.pause === 1"
+                    title="您确定要恢复吗？"
+                    @confirm="confirmResume(record)"
+                  >
+                    <a-divider type="vertical" />
+                    <PlayCircleOutlined title="恢复" style="color: #389e0d;font-size: 16px;cursor: pointer;" />
+                  </a-popconfirm>
                 </span>
               </template>
               <template v-if="column.key === 'action'">
-                <!-- v-model:checked="state.checked2" -->
-                <a-switch size="small" />
+                <a-tooltip>
+                  <template #title v-if="record.status !== 0 && record.status !== 3">排队中、索引中的文档无法禁用</template>
+                  <a-switch 
+                    :disabled="record.status !== 0 && record.status !== 3"
+                    v-model:checked="record.statusTemp" 
+                    size="small" 
+                    :checkedValue="3" 
+                    :unCheckedValue="0"
+                    @change="(val) => onSwitchChange(val, record)"
+                  />
+                </a-tooltip>
                 <a-divider type="vertical" />
-                <a-button type="link">分段设置</a-button>
+                <a-button type="link" @click="handleSettings(record)">分段设置</a-button>
                 <a-divider type="vertical" />
                 <a-button type="link" @click="handleUpdate(record)">重命名</a-button>
                 <a-divider type="vertical" />
@@ -85,13 +138,15 @@
 import { ref, reactive, onMounted, defineProps } from 'vue'
 import { useRouter } from 'vue-router'
 import {
-  PlusOutlined
+  PlusOutlined,
+  PlayCircleOutlined,
+  StopOutlined
 } from '@ant-design/icons-vue'
 import ManageLeft from './components/ManageLeft.vue'
 import CreateDrawerKB from './components/Documents/CreateDrawer.vue'
 import { message } from 'ant-design-vue'
 
-import { getList, saveDelete } from '@/api/documents'
+import { getList, saveDelete, saveUpdate, saveResume, savePause } from '@/api/documents'
 
 const props = defineProps({
   kbId: {
@@ -118,11 +173,12 @@ const listState = reactive(
         title: '名称',
         dataIndex: 'name',
         key: 'name',
+        minWidth: 200
       },
       {
         title: '分段模式',
-        dataIndex: 'age',
-        key: 'age',
+        dataIndex: 'chunk_mode',
+        key: 'chunk_mode',
         align: 'center',
         width: 140
       },
@@ -145,7 +201,7 @@ const listState = reactive(
         dataIndex: 'status',
         key: 'status',
         align: 'center',
-        width: 100
+        width: 180
       },
       {
         title: '操作',
@@ -164,6 +220,46 @@ const listState = reactive(
   }
 )
 
+// 暂停
+const confirmPause = async (row) => {
+  try {
+    await savePause({
+      id: row.id
+    })
+    message.success(`暂停成功`)
+    loadData()
+  } catch (error) {
+    // message.error(`暂停失败`)
+  }
+}
+
+// 恢复
+const confirmResume = async (row) => {
+  try {
+    await saveResume({
+      id: row?.id??''
+    })
+    message.success(`恢复成功`)
+    loadData()
+  } catch (error) {
+    // message.error(`恢复失败`)
+  }
+}
+
+// 切换状态
+const onSwitchChange = async (val, row) => {
+  try {
+    await saveUpdate({
+      id: row.id,
+      status: val
+    })
+    message.success(`状态修改成功`)
+    loadData()
+  } catch (error) {
+    row.statusTemp = row.status
+  }
+}
+
 // 创建
 const handleCreate = () => {
   if (CreateDrawerRef.value) {
@@ -174,6 +270,17 @@ const handleCreate = () => {
       }
     })
   }
+}
+
+// 分段设置
+const handleSettings = (row) => {
+  router.push({
+    name: 'DatasetsDocumentsSettings',
+    params: {
+      kbId: props.kbId,
+      docId: row.id
+    }
+  })
 }
 
 // 编辑
@@ -207,6 +314,9 @@ const loadData = async () => {
       kb_id: props.kbId
     })
     listState.data = res?.data??[]
+    listState.forEach(item => {
+      item.statusTemp = item.status
+    })
     spinningConfig.spinning = false
   } catch (error) {
     spinningConfig.spinning = false
