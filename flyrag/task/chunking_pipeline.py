@@ -6,8 +6,11 @@ import time
 
 from redis.asyncio import Redis
 
+import common
+from common.minio_client import MinioClient
 from common.redis_client import RedisClient
 from flyrag.api.entity import Entity, Document
+from flyrag.module.document import DocumentParserContext
 from flyrag.task import TaskPipeline, REDIS_KEY_PIPELINE_TASK_COUNT, PIPELINE_LIMIT, REDIS_KEY_PIPELINE_QUEUE, \
     REDIS_KEY_PIPELINE_FLAG
 
@@ -16,7 +19,6 @@ name = 'chunking'
 
 class ChunkingPipeline(TaskPipeline):
     __redis: Redis = RedisClient().get_redis()
-    flag = True
 
     async def start(self):
         while int((await self.__redis.get(REDIS_KEY_PIPELINE_FLAG)).decode('utf-8')):
@@ -59,6 +61,9 @@ class ChunkingPipeline(TaskPipeline):
     async def execute(self, doc: str):
         # TODO NFL 切片的逻辑
         doc = Document(**json.loads(doc))
-
+        file_path = MinioClient().get_presigned_url(common.DEFAULT_BUCKET_NAME, doc.obj_name)
+        print('文件路径：', file_path)
+        content = DocumentParserContext.do_parse(file_path)
+        print('切片逻辑：', content)
         time.sleep(30)
         pass

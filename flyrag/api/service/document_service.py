@@ -10,6 +10,7 @@ from sqlmodel import Session, select
 from common import snowflake
 from common.snowflake import Snowflake
 from flyrag.api.entity import Document, DocumentUpdate, ChunkConfig
+from flyrag.api.enums import ChunkConfigType
 from flyrag.task import DocumentTaskStatus
 from flyrag.task.task_dispatcher import TaskDispatcher
 
@@ -24,6 +25,7 @@ class DocumentService(object):
             doc.kb_id = kb_id
             doc.chunk_mode = cc.mode
             doc_cc = ChunkConfig(**cc.model_dump(exclude=['id']))
+            doc_cc.type = ChunkConfigType.DOCUMENT.value
             doc_cc.target_id = doc.id
             doc_ccs.append(doc_cc)
         deepcopy_docs = deepcopy(docs)
