@@ -5,11 +5,11 @@ from typing import Annotated
 
 from fastapi import APIRouter, Query
 from fastapi.params import Depends
-from sqlalchemy import update
-from sqlmodel import Session, select
+from sqlalchemy import update, func
+from sqlmodel import Session, select, col
 
 import common
-from flyrag.api import R
+from flyrag.api import R, Page
 from flyrag.api.entity import KnowledgeBase, KnowledgeBaseUpdate, DeleteEntity, KnowledgeBaseQuery, KnowledgeBaseCreate, \
     Document
 from common.mysql_client import MysqlClient
@@ -70,7 +70,7 @@ async def delete_kb(kb: DeleteEntity, session: SessionDep):
     kb_db.sqlmodel_update(kb)
     session.add(kb_db)
     # 删除知识库下的所有文档
-    session.exec(update(Document).where(Document.kb_id == kb.id).values(is_deleted = 1))
+    session.exec(update(Document).where(Document.kb_id == kb.id).values(is_deleted=1))
     session.commit()
     return R.ok('删除成功')
 
@@ -78,8 +78,15 @@ async def delete_kb(kb: DeleteEntity, session: SessionDep):
 @router.post("/list")
 async def list_kb(kb: KnowledgeBaseQuery, session: SessionDep, current: int = 1,
                   size: Annotated[int, Query(le=100)] = 100):
+    # 查询列表
     offset, limit = (current - 1) * size, size
     statement = MysqlClient.fill_statement(select(KnowledgeBase).offset(offset).limit(limit), KnowledgeBase, kb)
     # 如果有自定义查询字段，请在此自行添加
     kbs = session.exec(statement).all()
-    return R.ok(data=kbs)
+
+    # 查询总数
+    count_statement = MysqlClient.fill_statement(select(func.count(col(KnowledgeBase.id))), KnowledgeBase, kb)
+    total = session.exec(count_statement).one()
+
+    page = Page.of(current=current, size=size, total=total, records=kbs)
+    return R.ok(data=page)
