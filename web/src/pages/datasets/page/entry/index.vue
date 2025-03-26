@@ -1,7 +1,7 @@
 <!--
  * @Author: WuFeng <763467339@qq.com>
  * @Date: 2024-06-05 00:08:18
- * @LastEditTime: 2025-03-24 17:26:06
+ * @LastEditTime: 2025-03-26 08:33:46
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 知识库管理
  * @FilePath: \FlyRAG\web\src\pages\datasets\page\entry\index.vue
@@ -20,8 +20,8 @@
     <a-spin :tip="spinningConfig.tip" :spinning="spinningConfig.spinning">
       <div class="projectList" v-if="listState.data.length > 0">
         <a-row :gutter="16">
-          <a-col class="gutter-row" :xs="{span: 24}" :sm="{span: 24}" :md="{span: 12}" :lg="{span: 12}" :xl="{span: 8}" :xxl="{span: 6}" v-for="(item, index) in listState.data" :key="index" @click="handleClickManage(item)">
-            <a-card hoverable>
+          <a-col class="gutter-row" :xs="{span: 24}" :sm="{span: 24}" :md="{span: 12}" :lg="{span: 12}" :xl="{span: 8}" :xxl="{span: 6}" v-for="(item, index) in listState.data" :key="index">
+            <a-card :hoverable="false">
               <h2 class="name">
                 <span class="icon" style="border: 1px solid rgb(224 234 255);border-radius:5px;margin-right: 5px;background-color: rgb(245 248 255); display: inline-block;width: 32px;height: 32px;line-height:32px;text-align: center;">
                   <FolderOutlined style="color: rgb(68 76 231);" />
@@ -135,7 +135,7 @@ const loadData = async () => {
   spinningConfig.spinning = true
   try {
     const res = await getList()
-    listState.data = res?.data??[]
+    listState.data = res?.data?.records??[]
     spinningConfig.spinning = false
   } catch (error) {
     spinningConfig.spinning = false

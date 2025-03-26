@@ -10,12 +10,13 @@
 import request from '@/utils/request'
 
 // 文档 列表
-export function getList(params = {}) {
+export function getList(params = {}, query = {}) {
   const data = params
   return request({
     url: '/document/list',
     method: 'post',
-    data
+    data,
+    params: query
   })
 }
 

@@ -1,7 +1,7 @@
 <!--
  * @Author: WuFeng <763467339@qq.com>
  * @Date: 2025-03-20 14:21:13
- * @LastEditTime: 2025-03-25 10:43:04
+ * @LastEditTime: 2025-03-25 16:26:42
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
  * @FilePath: \FlyRAG\web\src\pages\datasets\page\entry\documents.vue
@@ -27,7 +27,11 @@
           </a-button>
         </div>
         <div class="dataTable">
-          <a-table :dataSource="listState.data" :columns="listState.columns">
+          <a-table 
+            :dataSource="listState.data" 
+            :columns="listState.columns"
+            :pagination="{ current: listState.query.current, pageSize: listState.query.size, total: listState.total }"
+          >
             <template #bodyCell="{ column, record }">
               <template v-if="column.key === 'chunk_mode'">
                 <span>
@@ -215,8 +219,9 @@ const listState = reactive(
     data: [],
     query: {
       current: 1,
-      size: 10
-    }
+      size: 3
+    },
+    total: 0
   }
 )
 
@@ -312,8 +317,9 @@ const loadData = async () => {
   try {
     const res = await getList({
       kb_id: props.kbId
-    })
-    listState.data = res?.data??[]
+    }, listState.query)
+    listState.data = res?.data?.records??[]
+    listState.total = res?.data?.total??0
     listState.forEach(item => {
       item.statusTemp = item.status
     })
