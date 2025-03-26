@@ -1,6 +1,7 @@
 #! /usr/bin/python
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/13 22:05
+from collections.abc import Sequence
 
 from fastapi.encoders import jsonable_encoder
 from pydantic import BaseModel, Field
@@ -19,3 +20,15 @@ class R(BaseModel):
     @classmethod
     def fail(cls, msg: str):
         return R(code=400, data=None, msg=msg, status=False).__dict__
+
+class Page(BaseModel):
+    total: int = Field(0, description="总数")
+    current: int = Field(1, description="当前页")
+    size: int = Field(10, description="每页大小")
+    pages: int = Field(0, description="总页数")
+    records: Sequence = Field([], description="数据")
+
+    @classmethod
+    def of(cls, current: int, size: int, total: int, records: Sequence):
+        pages = total // size + 1 if total % size else total // size
+        return Page(total=total, pages=pages, current=current, size=size, records=records)

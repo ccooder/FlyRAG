@@ -98,9 +98,9 @@ class MinioClient(object):
             common.get_logger().error(f"Error uploading file: {e}")
             return False
 
-    def download_file(self, bucket_name, object_name, expires: timedelta =timedelta(hours=1)):
+    def get_presigned_url(self, bucket_name, object_name, expires: timedelta =timedelta(hours=1)):
         """
-        从存储桶下载文件
+        获取文件临时链接
         :param bucket_name: 存储桶名称
         :param object_name: 对象名称（在存储桶中的名称）
         :param expires: 链接有效期（默认一个小时）

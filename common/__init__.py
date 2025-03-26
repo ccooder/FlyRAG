@@ -9,6 +9,8 @@ from datetime import datetime, date
 
 from enum import Enum
 
+from httpx._urlparse import urlparse
+
 name = 'common'
 
 DEFAULT_BUCKET_NAME = 'fly-rag'
@@ -87,3 +89,9 @@ def get_logger():
 
     l = logging.getLogger(module_name)
     return l
+
+
+def is_valid_url(url: str) -> bool:
+    """Check if the url is valid."""
+    parsed = urlparse(url)
+    return bool(parsed.netloc) and bool(parsed.scheme)
