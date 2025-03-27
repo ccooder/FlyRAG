@@ -5,9 +5,11 @@ import json
 from abc import ABC, abstractmethod
 from enum import Enum, auto
 
+import common
 from common.mysql_client import MysqlClient
 from common.redis_client import RedisClient
 from flyrag.api.entity import Entity, Document
+from flyrag.api.enums import DocumentStatus
 
 name = 'task'
 
@@ -44,12 +46,36 @@ class TaskPipeline(ABC):
             return True
         return False
 
+    async def change_status(self, doc: Document, pipeline_name: str, status: DocumentStatus):
+        session = next(MysqlClient().get_session())
+        redis = RedisClient().get_redis()
+        try:
+            doc_data = Document(status=status.value).model_dump(exclude_unset=True)
+            doc.sqlmodel_update(doc_data)
+            session.add(doc)
+            if status == DocumentStatus.AVAILABLE:
+                # TODO NFL 索引完成时的操作
+                pass
+            session.commit()
+        except Exception as e:
+            common.get_logger().error('更新文档状态时报错{}', e)
+            session.rollback()
+            # 若任务状态更改失败放回队列底部并且将执行中的数量-1
+            pipeline = redis.pipeline()
+            pipeline.multi()
+            await pipeline.lpush(REDIS_KEY_PIPELINE_QUEUE.format(pipeline_name), doc.model_dump_json())
+            await pipeline.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(pipeline_name))
+            await pipeline.execute()
+            return False
+        return True
+
     async def incr_progress(self, doc_id: int, progress: float):
         redis = RedisClient().get_redis()
         if await redis.exists(REDIS_KEY_DOC_PROGRESS.format(doc_id)):
             await redis.set(REDIS_KEY_DOC_PROGRESS.format(doc_id), progress)
         else:
             await redis.incrby(REDIS_KEY_DOC_PROGRESS.format(doc_id), progress)
+
 
 
 class DocumentTaskStatus(Enum):

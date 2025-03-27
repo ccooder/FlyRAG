@@ -10,7 +10,7 @@ from sqlmodel import SQLModel, Field
 from common.redis_client import RedisClient
 from flyrag.api.entity import Document
 from flyrag.task import DocumentTaskStatus, TaskPipeline, REDIS_KEY_PIPELINE_FLAG, REDIS_KEY_PIPELINE_QUEUE, \
-    chunking_pipeline
+    chunking_pipeline, embedding_pipeline
 from flyrag.task.chunking_pipeline import ChunkingPipeline
 from flyrag.task.embedding_pipeline import EmbeddingPipeline
 
@@ -52,20 +52,5 @@ class TaskDispatcher(object):
         docs_dump = [doc.model_dump_json() for doc in docs]
         if status == DocumentTaskStatus.CHUNKING:
             await cls.__redis.lpush(REDIS_KEY_PIPELINE_QUEUE.format(chunking_pipeline.name), *docs_dump)
-        pass
-
-class Test(SQLModel):
-    id:int = Field(default=None)
-    name:str = Field(default=None)
-    docs:List[Document] = Field(default=None)
-
-if __name__ == '__main__':
-    t = Test(id=1, name='niufenglu', docs=[
-        {
-            "name": "仲裁须知.pdf",
-            "original_name": "仲裁须知.pdf",
-            "size": 133026,
-            "obj_name": "fly-rag/ae8a84e2-0492-11f0-b5e6-d651885abef6.pdf"
-        }
-    ])
-    print(t.docs[0].model_dump())
+        elif status == DocumentTaskStatus.CHUNKED:
+            await cls.__redis.lpush(REDIS_KEY_PIPELINE_QUEUE.format(embedding_pipeline.name), *docs_dump)

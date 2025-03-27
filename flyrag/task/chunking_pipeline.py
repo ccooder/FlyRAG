@@ -11,6 +11,7 @@ from common.minio_client import MinioClient
 from common.mysql_client import MysqlClient
 from common.redis_client import RedisClient
 from flyrag.api.entity import Entity, Document
+from flyrag.api.enums import DocumentStatus
 from flyrag.api.service.chunk_config_service import ChunkConfigService
 from flyrag.module.chunk import ChunkerContext, ChunkMode
 from flyrag.module.document import DocumentParserContext
@@ -66,6 +67,8 @@ class ChunkingPipeline(TaskPipeline):
         doc = Document(**json.loads(doc))
         # 初始化文档处理进度
         await super().incr_progress(doc.id, 0)
+        if not await super().change_status(doc, name, DocumentStatus.INDEXING):
+            return
         file_path = MinioClient().get_presigned_url(common.DEFAULT_BUCKET_NAME, doc.obj_name)
         content = DocumentParserContext.do_parse(file_path)
         # 解析完文档，进度增加0.05
