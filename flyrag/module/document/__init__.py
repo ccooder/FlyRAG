@@ -94,4 +94,5 @@ class DocumentParserContext(object):
         return doc_parser.parse()
 
 if __name__ == '__main__':
-    print(DocumentParserContext.do_parse(f'docx_parser.py'))
+    print(DocumentParserContext.do_parse(fr'D:\WORK\doc\知识库文档\问题修复2025030902.pdf'))
+    # print(DocumentParserContext.do_parse(fr'C:/Users/niufe/Desktop/test.pdf'))

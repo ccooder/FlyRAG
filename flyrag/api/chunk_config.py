@@ -24,6 +24,12 @@ SessionDep = Annotated[Session, Depends(MysqlClient().get_session)]
 @router.post("/create")
 async def create_cc(cc: ChunkConfig, session: SessionDep):
     try:
+        if cc.chunk_size > 2048:
+            return R.fail('切片大小不能超过2048')
+        if cc.chunk_size < 1:
+            return R.fail('切片大小不能小于1')
+        if cc.chunk_overlap > cc.chunk_size:
+            return R.fail('切片重叠不能超过切片大小')
         if cc.type == ChunkConfigType.KNOWLEDGE_BASE.value:
             kb = KnowledgeBaseService.exists(cc.target_id, session)
             if not kb:

@@ -11,6 +11,7 @@ from tqdm import tqdm
 from flyrag.module.document import BaseParser
 from langchain_community.document_loaders import PyMuPDFLoader
 
+
 class PdfParser(BaseParser):
     @exec_time
     def parse(self):

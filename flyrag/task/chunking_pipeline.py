@@ -8,8 +8,11 @@ from redis.asyncio import Redis
 
 import common
 from common.minio_client import MinioClient
+from common.mysql_client import MysqlClient
 from common.redis_client import RedisClient
 from flyrag.api.entity import Entity, Document
+from flyrag.api.service.chunk_config_service import ChunkConfigService
+from flyrag.module.chunk import ChunkerContext, ChunkMode
 from flyrag.module.document import DocumentParserContext
 from flyrag.task import TaskPipeline, REDIS_KEY_PIPELINE_TASK_COUNT, PIPELINE_LIMIT, REDIS_KEY_PIPELINE_QUEUE, \
     REDIS_KEY_PIPELINE_FLAG
@@ -61,9 +64,19 @@ class ChunkingPipeline(TaskPipeline):
     async def execute(self, doc: str):
         # TODO NFL 切片的逻辑
         doc = Document(**json.loads(doc))
+        # 初始化文档处理进度
+        await super().incr_progress(doc.id, 0)
         file_path = MinioClient().get_presigned_url(common.DEFAULT_BUCKET_NAME, doc.obj_name)
-        print('文件路径：', file_path)
         content = DocumentParserContext.do_parse(file_path)
-        print('切片逻辑：', content)
-        time.sleep(30)
+        # 解析完文档，进度增加0.05
+        await super().incr_progress(doc.id, 0.05)
+        # 获取文档的切片配置
+        chunk_config = ChunkConfigService().get_chunk_config(doc.chunk_config_id, next(MysqlClient().get_session()))
+        # 不同的切片模式，返回的切片数据结构不一样
+        if chunk_config.mode == ChunkMode.General:
+            chunks = ChunkerContext.do_chunk(content, doc, chunk_config)
+            # 保存切片到数据库
+
+        # 切片入库后进度增加0.05
+        await super().incr_progress(doc.id, 0.05)
         pass

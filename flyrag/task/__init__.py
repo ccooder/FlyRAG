@@ -15,6 +15,7 @@ PIPELINE_LIMIT = 4
 REDIS_KEY_PIPELINE_FLAG = 'flyrag:pipeline_flag'
 REDIS_KEY_PIPELINE_TASK_COUNT = 'flyrag:pipeline_task_count:{}'
 REDIS_KEY_PIPELINE_QUEUE = 'flyrag:pipeline_queue:{}'
+REDIS_KEY_DOC_PROGRESS = 'flyrag:doc_progress:{}'
 
 
 class TaskPipeline(ABC):
@@ -42,6 +43,13 @@ class TaskPipeline(ABC):
             await pipeline.execute()
             return True
         return False
+
+    async def incr_progress(self, doc_id: int, progress: float):
+        redis = RedisClient().get_redis()
+        if await redis.exists(REDIS_KEY_DOC_PROGRESS.format(doc_id)):
+            await redis.set(REDIS_KEY_DOC_PROGRESS.format(doc_id), progress)
+        else:
+            await redis.incrby(REDIS_KEY_DOC_PROGRESS.format(doc_id), progress)
 
 
 class DocumentTaskStatus(Enum):
