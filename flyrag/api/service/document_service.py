@@ -12,7 +12,7 @@ from common.snowflake import Snowflake
 from flyrag.api.entity import Document, DocumentUpdate, ChunkConfig
 from flyrag.api.enums import ChunkConfigType
 from flyrag.task import DocumentTaskStatus
-from flyrag.task.task_dispatcher import TaskDispatcher
+
 
 
 class DocumentService(object):
@@ -24,12 +24,13 @@ class DocumentService(object):
         for doc in docs:
             doc.kb_id = kb_id
             doc.chunk_mode = cc.mode
-            doc_cc = ChunkConfig(**cc.model_dump(exclude=['id']))
+            doc_cc = ChunkConfig(**cc.model_dump(exclude=['id', 'create_time', 'update_time']))
             doc_cc.type = ChunkConfigType.DOCUMENT.value
             doc_cc.target_id = doc.id
             doc_ccs.append(doc_cc)
         deepcopy_docs = deepcopy(docs)
-        asyncio.create_task(TaskDispatcher.dispatch_document(deepcopy_docs, DocumentTaskStatus.CHUNKING))
+        from flyrag.task.task_dispatcher import TaskDispatcher
+        asyncio.create_task(TaskDispatcher.dispatch_task(deepcopy_docs, DocumentTaskStatus.CHUNKING))
         session.add_all(docs)
         session.add_all(doc_ccs)
 
@@ -41,7 +42,7 @@ class DocumentService(object):
         return session.get(Document, doc_id)
 
     @staticmethod
-    def update_doc(doc: DocumentUpdate, session: Session):
+    def update_doc(doc: DocumentUpdate, session: Session, autocommit: bool = True):
         if not doc.id:
             return False
         doc_in_db = session.get(Document, doc.id)
@@ -50,5 +51,6 @@ class DocumentService(object):
         doc_data = doc.model_dump(exclude_unset=True)
         doc_in_db.sqlmodel_update(doc_data)
         session.add(doc_in_db)
-        session.commit()
+        if autocommit:
+            session.commit()
         return True

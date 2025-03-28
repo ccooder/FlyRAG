@@ -142,4 +142,4 @@ class MinioClient(object):
 
 if __name__ == '__main__':
     mc = MinioClient()
-    print(mc.download_file(common.DEFAULT_BUCKET_NAME, '20250324/07b1de0f-0898-11f0-9f94-dd7800b8a5b8.md'))
+    print(mc.get_presigned_url(common.DEFAULT_BUCKET_NAME, '20250324/07b1de0f-0898-11f0-9f94-dd7800b8a5b8.md'))

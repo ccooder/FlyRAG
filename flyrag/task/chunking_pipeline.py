@@ -10,9 +10,11 @@ import common
 from common.minio_client import MinioClient
 from common.mysql_client import MysqlClient
 from common.redis_client import RedisClient
-from flyrag.api.entity import Entity, Document
+from flyrag.api.entity import Entity, Document, DocumentUpdate, DocumentChunk
 from flyrag.api.enums import DocumentStatus
 from flyrag.api.service.chunk_config_service import ChunkConfigService
+from flyrag.api.service.document_chunk_service import DocumentChunkService
+from flyrag.api.service.document_service import DocumentService
 from flyrag.module.chunk import ChunkerContext, ChunkMode
 from flyrag.module.document import DocumentParserContext
 from flyrag.task import TaskPipeline, REDIS_KEY_PIPELINE_TASK_COUNT, PIPELINE_LIMIT, REDIS_KEY_PIPELINE_QUEUE, \
@@ -71,15 +73,32 @@ class ChunkingPipeline(TaskPipeline):
             return
         file_path = MinioClient().get_presigned_url(common.DEFAULT_BUCKET_NAME, doc.obj_name)
         content = DocumentParserContext.do_parse(file_path)
+        # 统计字符数，去除空格，保存至文档信息
+        DocumentService.update_doc(DocumentUpdate(id=doc.id, char_count=common.get_char_count(content)),
+                                   next(MysqlClient().get_session()))
         # 解析完文档，进度增加0.05
         await super().incr_progress(doc.id, 0.05)
         # 获取文档的切片配置
-        chunk_config = ChunkConfigService().get_chunk_config(doc.chunk_config_id, next(MysqlClient().get_session()))
+        chunk_config = ChunkConfigService().get_chunk_config(doc.id, next(MysqlClient().get_session()))
         # 不同的切片模式，返回的切片数据结构不一样
-        if chunk_config.mode == ChunkMode.General:
+        if chunk_config.mode == ChunkMode.General.value:
             chunks = ChunkerContext.do_chunk(content, doc, chunk_config)
-            # 保存切片到数据库
+            # 保存切片数量至文档信息
+            session = next(MysqlClient().get_session())
+            try:
+                DocumentService.update_doc(DocumentUpdate(id=doc.id, chunk_count=len(chunks)), session, autocommit=False)
+                # 保存切片到数据库
+                doc_chunks = [
+                    DocumentChunk(doc_id=int(doc.id), chunk=chunk, chunk_no=i + 1, char_count=common.get_char_count(chunk)) for
+                    i, chunk in enumerate(chunks)]
+                DocumentChunkService.create_chunks(doc_chunks, session)
+                session.commit()
+            except Exception as e:
+                common.get_logger().error('保存切片失败{}', e)
+                session.rollback()
+                return
 
         # 切片入库后进度增加0.05
         await super().incr_progress(doc.id, 0.05)
-        pass
+        # 切片入库后，执行任务数-1
+        await self.__redis.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(name))

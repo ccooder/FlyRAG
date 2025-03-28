@@ -50,9 +50,10 @@ class TaskPipeline(ABC):
         session = next(MysqlClient().get_session())
         redis = RedisClient().get_redis()
         try:
+            doc_db = session.get(Document, doc.id)
             doc_data = Document(status=status.value).model_dump(exclude_unset=True)
-            doc.sqlmodel_update(doc_data)
-            session.add(doc)
+            doc_db.sqlmodel_update(doc_data)
+            session.add(doc_db)
             if status == DocumentStatus.AVAILABLE:
                 # TODO NFL 索引完成时的操作
                 pass
@@ -71,10 +72,10 @@ class TaskPipeline(ABC):
 
     async def incr_progress(self, doc_id: int, progress: float):
         redis = RedisClient().get_redis()
-        if await redis.exists(REDIS_KEY_DOC_PROGRESS.format(doc_id)):
+        if not await redis.exists(REDIS_KEY_DOC_PROGRESS.format(doc_id)):
             await redis.set(REDIS_KEY_DOC_PROGRESS.format(doc_id), progress)
         else:
-            await redis.incrby(REDIS_KEY_DOC_PROGRESS.format(doc_id), progress)
+            await redis.incrbyfloat(REDIS_KEY_DOC_PROGRESS.format(doc_id), progress)
 
 
 

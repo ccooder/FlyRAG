@@ -3,12 +3,13 @@
 # Created by Fenglu Niu on 2025/3/17 15:19
 import asyncio
 import json
-from typing import List
+from ctypes.wintypes import HTASK
+from typing import List, Union
 
 from sqlmodel import SQLModel, Field
 
 from common.redis_client import RedisClient
-from flyrag.api.entity import Document
+from flyrag.api.entity import Document, DocumentChunk
 from flyrag.task import DocumentTaskStatus, TaskPipeline, REDIS_KEY_PIPELINE_FLAG, REDIS_KEY_PIPELINE_QUEUE, \
     chunking_pipeline, embedding_pipeline
 from flyrag.task.chunking_pipeline import ChunkingPipeline
@@ -48,9 +49,9 @@ class TaskDispatcher(object):
         await cls.__redis.set(REDIS_KEY_PIPELINE_FLAG, 0)
 
     @classmethod
-    async def dispatch_document(cls, docs: List[Document], status: DocumentTaskStatus):
-        docs_dump = [doc.model_dump_json() for doc in docs]
+    async def dispatch_task(cls, tasks: List[Union[Document, DocumentChunk]], status: DocumentTaskStatus):
+        tasks_dump = [task.model_dump_json() for task in tasks]
         if status == DocumentTaskStatus.CHUNKING:
-            await cls.__redis.lpush(REDIS_KEY_PIPELINE_QUEUE.format(chunking_pipeline.name), *docs_dump)
+            await cls.__redis.lpush(REDIS_KEY_PIPELINE_QUEUE.format(chunking_pipeline.name), *tasks_dump)
         elif status == DocumentTaskStatus.CHUNKED:
-            await cls.__redis.lpush(REDIS_KEY_PIPELINE_QUEUE.format(embedding_pipeline.name), *docs_dump)
+            await cls.__redis.lpush(REDIS_KEY_PIPELINE_QUEUE.format(embedding_pipeline.name), *tasks_dump)

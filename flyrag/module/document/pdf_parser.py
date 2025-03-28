@@ -16,5 +16,4 @@ class PdfParser(BaseParser):
     @exec_time
     def parse(self):
         doc = PyMuPDFLoader(self.file, mode='single').load()
-        print(doc)
         return doc[0].page_content

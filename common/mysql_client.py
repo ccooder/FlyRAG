@@ -28,8 +28,7 @@ class MysqlClient(object):
             host = os.getenv('MYSQL_HOST')
             user = os.getenv('MYSQL_USER')
             password = os.getenv('MYSQL_PASSWORD')
-            self.__engine = create_engine(f"mysql+mysqlconnector://{user}:{quote_plus(password)}@{host}/fly_rag",
-                                          echo=True)
+            self.__engine = create_engine(f"mysql+mysqlconnector://{user}:{quote_plus(password)}@{host}/fly_rag")
 
     def get_session(self):
         with Session(self.__engine) as session:

@@ -139,3 +139,8 @@ def is_valid_url(url: str) -> bool:
     """Check if the url is valid."""
     parsed = urlparse(url)
     return bool(parsed.netloc) and bool(parsed.scheme)
+
+def get_char_count(text: str) -> int:
+    space_count = sum(1 for c in text if c.isspace())
+    char_count = len(text) - space_count
+    return char_count

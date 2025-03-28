@@ -18,6 +18,7 @@ model_config = ConfigDict(
     from_attributes=True,
     json_encoders={datetime: lambda dt: '' if dt is None else dt.strftime("%Y-%m-%d %H:%M:%S"),
                    int: lambda o: '' if o is None else o if o < 0x20000000000000 else str(o)}
+
 )
 
 
@@ -62,6 +63,7 @@ class Document(Entity, table=True):
     size: int = Field(default=None)
     obj_name: str = Field(default=None)
     char_count: int = Field(default=0)
+    chunk_count: int = Field(default=0)
     pause: int = Field(default=0)
 
 class DocumentCreate(BaseModel):
@@ -84,6 +86,23 @@ class DocumentUpdate(UpdateEntity):
     name: str = Field(default=None)
     mode: int = Field(default=None)
     status: int = Field(default=None)
+    char_count: int = Field(default=0)
+    chunk_count: int = Field(default=0)
+
+# 文档切片
+class DocumentChunk(Entity, table=True):
+    """
+    文档切片实体
+    """
+    __tablename__ = 'fr_document_chunk'
+    model_config = model_config
+    doc_id: int = Field(default=None)
+    pid: int = Field(default=0)
+    chunk: str = Field(default=None)
+    chunk_no: int = Field(default=None)
+    char_count: int = Field(default=None)
+    keyword: str = Field(default=None)
+
 
 # 切片配置
 class ChunkConfig(Entity, table=True):

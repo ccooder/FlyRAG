@@ -85,7 +85,6 @@ async def delete_doc(doc: DeleteEntity, session: SessionDep):
 @router.post("/pause")
 async def pause(id: int, session: SessionDep):
     doc_db = session.get(Document, id)
-    print(DocumentStatus.QUEUEING.value)
     if not doc_db:
         return R.fail('文档不存在')
     if doc_db.pause == 1:
