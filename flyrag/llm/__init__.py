@@ -14,23 +14,14 @@ import common
 
 class LLM(object):
 
-    def __init__(self):
+    def __init__(self, temperature=0.3, model='Qwen/Qwen2.5-72B-Instruct'):
         load_dotenv()
         base_url = os.getenv('OPENAI_API_BASE')
         self.__llm = ChatOpenAI(
             base_url=base_url,
-            temperature=0.3,
-            model='Qwen/Qwen2.5-72B-Instruct'
+            temperature=temperature,
+            model=model
         )
-
-    def chat(self, text):
-        prompt = PromptTemplate.from_file(f'{common.root_path()}/prompt/determine_qa_prompt.md')
-        messages = [
-            SystemMessage(content=prompt.template),
-            HumanMessage(content=text)
-        ]
-        response = self.__llm(messages)
-        return response.content
 
     def determine_qa(self, text):
         prompt = PromptTemplate.from_file(f'{common.root_path()}/prompt/determine_qa_prompt.md')
