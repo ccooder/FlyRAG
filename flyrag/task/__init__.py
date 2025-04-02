@@ -7,6 +7,7 @@ from abc import ABC, abstractmethod
 from enum import Enum, auto
 
 from redis import Redis
+from redis.typing import FieldT
 
 import common
 from common.mysql_client import MysqlClient
@@ -57,6 +58,14 @@ class TaskPipeline(ABC):
             return True
         return False
 
+    async def put_back(self, pipeline_name: str, *values: FieldT):
+        pipeline = self._redis.pipeline()
+        pipeline.multi()
+        await pipeline.lpush(REDIS_KEY_PIPELINE_QUEUE.format(pipeline_name), *values)
+        await pipeline.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(pipeline_name))
+        await pipeline.execute()
+        time.sleep(1)
+
     async def change_status(self, doc: Document, pipeline_name: str, status: DocumentStatus):
         session = next(MysqlClient().get_session())
         try:
@@ -72,11 +81,7 @@ class TaskPipeline(ABC):
             common.get_logger().error('更新文档状态时报错{}', e)
             session.rollback()
             # 若任务状态更改失败放回队列底部并且将执行中的数量-1
-            pipeline = self._redis.pipeline()
-            pipeline.multi()
-            await pipeline.lpush(REDIS_KEY_PIPELINE_QUEUE.format(pipeline_name), doc.model_dump_json())
-            await pipeline.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(pipeline_name))
-            await pipeline.execute()
+            await self.put_back(pipeline_name, doc.model_dump_json())
             return False
         return True
 

@@ -24,6 +24,7 @@ dependencies = [
     "distro==1.9.0",
     "docx2txt==0.9",
     "fastapi==0.115.12",
+    "fenglub>=0.0.4a1",
     "frozenlist==1.5.0",
     "greenlet==3.1.1",
     "grpcio==1.71.0",

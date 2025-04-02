@@ -3,6 +3,7 @@ revision = 1
 requires-python = ">=3.12"
 resolution-markers = [
     "python_full_version >= '3.12.4'",
+    "python_full_version >= '3.12.4' and python_full_version < '3.13'",
     "python_full_version < '3.12.4'",
 ]
 
@@ -341,6 +342,19 @@ wheels = [
 ]
 
 [[package]]
+name = "fenglub"
+version = "0.0.4a1"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "mysql-connector-python" },
+    { name = "regex" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/0e/9a/313dd62b8eb0b32996c0b9ce8270a42fc6ee22b962ba692c7764fb61ade4/fenglub-0.0.4a1.tar.gz", hash = "sha256:d33a1ac968e42bb01541cf2eb55c26d20d47d60bc5c2e650e5d7450c4e54afca", size = 12577 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/25/23/2eb339b6ecaec603ca9fbbb0d2629114d85ebb0602f0bc314aef83ee4a69/fenglub-0.0.4a1-py3-none-any.whl", hash = "sha256:159c1cf52b30d20d77313458069687dbcc43b0bb8b3fc3b595f6e4507634ccb8", size = 15473 },
+]
+
+[[package]]
 name = "flyrag"
 version = "0.1.0"
 source = { virtual = "." }
@@ -365,6 +379,7 @@ dependencies = [
     { name = "distro" },
     { name = "docx2txt" },
     { name = "fastapi" },
+    { name = "fenglub" },
     { name = "frozenlist" },
     { name = "greenlet" },
     { name = "grpcio" },
@@ -451,6 +466,7 @@ requires-dist = [
     { name = "distro", specifier = "==1.9.0" },
     { name = "docx2txt", specifier = "==0.9" },
     { name = "fastapi", specifier = "==0.115.12" },
+    { name = "fenglub", specifier = ">=0.0.4a1" },
     { name = "frozenlist", specifier = "==1.5.0" },
     { name = "greenlet", specifier = "==3.1.1" },
     { name = "grpcio", specifier = "==1.71.0" },

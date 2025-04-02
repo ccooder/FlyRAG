@@ -4,6 +4,7 @@
 import json
 import time
 
+import common
 from common.weaviate_client import WeaviateClient
 from flyrag.api.entity import DocumentChunk
 from flyrag.task import TaskPipeline, REDIS_KEY_PIPELINE_TASK_COUNT, \
@@ -36,20 +37,19 @@ class EmbeddingPipeline(TaskPipeline):
             # 判断任务是否暂停
             if await super().is_pause(chunk.doc_id, name):
                 # 若任务暂停放回队列底部并且将执行中的数量-1
-                pipeline = self._redis.pipeline()
-                pipeline.multi()
-                await pipeline.lpush(REDIS_KEY_PIPELINE_QUEUE.format(name), chunk_redis)
-                await pipeline.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
-                await pipeline.execute()
+                await super().put_back(name, chunk_redis)
                 continue
             # 执行任务
-            await self.execute(chunk)
+            try:
+                await self.execute(chunk)
+            except Exception as e:
+                common.get_logger().error('向量化失败,将任务重新放回队列底部。{}', e)
+                await super().put_back(name, chunk_redis)
+                continue
 
             # 休眠1秒
             time.sleep(1)
 
     async def execute(self, chunk: DocumentChunk):
         with WeaviateClient().get_client() as weaviate_client:
-            WeaviateVec
-
-        pass
+            print(weaviate_client.is_ready())

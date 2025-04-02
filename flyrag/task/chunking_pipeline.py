@@ -48,15 +48,16 @@ class ChunkingPipeline(TaskPipeline):
             # 判断任务是否暂停
             if await super().is_pause(doc.id, name):
                 # 若任务暂停放回队列底部并且将执行中的数量-1
-                pipeline = self._redis.pipeline()
-                pipeline.multi()
-                await pipeline.lpush(REDIS_KEY_PIPELINE_QUEUE.format(name), doc_redis)
-                await pipeline.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
-                await pipeline.execute()
+                await super().put_back(name, doc_redis)
                 continue
 
             # 执行任务
-            await self.execute(doc)
+            try:
+                await self.execute(doc)
+            except Exception as e:
+                common.get_logger().error('执行切片失败,将任务重新放回队列底部。{}', e)
+                await super().change_status(doc, name, DocumentStatus.QUEUEING)
+                await super().put_back(name, doc_redis)
 
             # 休眠1秒
             time.sleep(1)

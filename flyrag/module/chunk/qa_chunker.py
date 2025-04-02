@@ -7,7 +7,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 class QaChunker(BaseChunker):
     def chunk(self):
-        separator = r'问[:：]|Q[:：]'
+        separator = r'问[:： ]|Q[:： ]'
         cts = RecursiveCharacterTextSplitter(separators=[separator], keep_separator='start',
                                              is_separator_regex=True,
                                              chunk_size=self.chunk_config.chunk_size,
