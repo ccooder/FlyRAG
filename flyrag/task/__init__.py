@@ -2,8 +2,11 @@
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/17 15:00
 import json
+import time
 from abc import ABC, abstractmethod
 from enum import Enum, auto
+
+from redis import Redis
 
 import common
 from common.mysql_client import MysqlClient
@@ -21,34 +24,41 @@ REDIS_KEY_DOC_PROGRESS = 'flyrag:doc_progress:{}'
 
 
 class TaskPipeline(ABC):
+    _redis: Redis = RedisClient().get_redis()
 
     @abstractmethod
-    def start(self):
+    async def start(self):
         pass
 
     @abstractmethod
     def execute(self, task: str):
         pass
 
-    async def is_pause(self, task: str, pipeline_name):
+    async def pipeline_flag(self):
+        return int((await self._redis.get(REDIS_KEY_PIPELINE_FLAG)).decode('utf-8'))
+
+    async def is_over_limit(self, pipeline_name):
+        # 判断流水线执行任务数是否达到限制
+        task_count = await self._redis.get(REDIS_KEY_PIPELINE_TASK_COUNT.format(pipeline_name))
+        if task_count is None:
+            task_count = 0
+            await self._redis.set(REDIS_KEY_PIPELINE_TASK_COUNT.format(pipeline_name), task_count)
+        else:
+            task_count = int(task_count.decode('utf-8'))
+        if task_count >= PIPELINE_LIMIT:
+            time.sleep(1)
+            return True
+        return False
+
+    async def is_pause(self, doc_id: int, pipeline_name):
         session = next(MysqlClient().get_session())
-        redis = RedisClient().get_redis()
-        doc = Document(**json.loads(task))
-        doc_db = session.get(Document, doc.id)
+        doc_db = session.get(Document, doc_id)
         if doc_db.pause == 1:
-            print("任务暂停暂时放回队列底部")
-            # 若任务暂停放回队列底部并且将执行中的数量-1
-            pipeline = redis.pipeline()
-            pipeline.multi()
-            await pipeline.lpush(REDIS_KEY_PIPELINE_QUEUE.format(pipeline_name), task)
-            await pipeline.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(pipeline_name))
-            await pipeline.execute()
             return True
         return False
 
     async def change_status(self, doc: Document, pipeline_name: str, status: DocumentStatus):
         session = next(MysqlClient().get_session())
-        redis = RedisClient().get_redis()
         try:
             doc_db = session.get(Document, doc.id)
             doc_data = Document(status=status.value).model_dump(exclude_unset=True)
@@ -62,7 +72,7 @@ class TaskPipeline(ABC):
             common.get_logger().error('更新文档状态时报错{}', e)
             session.rollback()
             # 若任务状态更改失败放回队列底部并且将执行中的数量-1
-            pipeline = redis.pipeline()
+            pipeline = self._redis.pipeline()
             pipeline.multi()
             await pipeline.lpush(REDIS_KEY_PIPELINE_QUEUE.format(pipeline_name), doc.model_dump_json())
             await pipeline.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(pipeline_name))
@@ -71,11 +81,10 @@ class TaskPipeline(ABC):
         return True
 
     async def incr_progress(self, doc_id: int, progress: float):
-        redis = RedisClient().get_redis()
-        if not await redis.exists(REDIS_KEY_DOC_PROGRESS.format(doc_id)):
-            await redis.set(REDIS_KEY_DOC_PROGRESS.format(doc_id), progress)
+        if not await self._redis.exists(REDIS_KEY_DOC_PROGRESS.format(doc_id)):
+            await self._redis.set(REDIS_KEY_DOC_PROGRESS.format(doc_id), progress)
         else:
-            await redis.incrbyfloat(REDIS_KEY_DOC_PROGRESS.format(doc_id), progress)
+            await self._redis.incrbyfloat(REDIS_KEY_DOC_PROGRESS.format(doc_id), progress)
 
 
 

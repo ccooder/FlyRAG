@@ -11,7 +11,6 @@ from datetime import datetime, date
 from enum import Enum
 
 from httpx._urlparse import urlparse
-from fengluU import exec_time
 
 name = 'common'
 

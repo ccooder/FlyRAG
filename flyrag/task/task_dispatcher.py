@@ -16,8 +16,11 @@ from flyrag.task.chunking_pipeline import ChunkingPipeline
 from flyrag.task.embedding_pipeline import EmbeddingPipeline
 
 
-def chunking_pipeline_in_process():
+def chunking_pipeline_in_subprocess():
     asyncio.run(ChunkingPipeline().start())
+
+def embedding_pipeline_in_subprocess():
+    asyncio.run(EmbeddingPipeline().start())
 
 
 class TaskDispatcher(object):
@@ -39,9 +42,9 @@ class TaskDispatcher(object):
         await cls.__redis.set(REDIS_KEY_PIPELINE_FLAG, 1)
         from multiprocessing import Process
         # 启动切片进程
-        chunking = Process(target=chunking_pipeline_in_process, name='p-chunking')
+        chunking = Process(target=chunking_pipeline_in_subprocess, name='p-chunking')
         chunking.start()
-        embedding = Process(target=EmbeddingPipeline().start, name='p-embedding')
+        embedding = Process(target=embedding_pipeline_in_subprocess, name='p-embedding')
         embedding.start()
 
     @classmethod

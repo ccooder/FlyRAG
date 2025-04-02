@@ -24,19 +24,9 @@ name = 'chunking'
 
 
 class ChunkingPipeline(TaskPipeline):
-    __redis: Redis = RedisClient().get_redis()
-
     async def start(self):
-        while int((await self.__redis.get(REDIS_KEY_PIPELINE_FLAG)).decode('utf-8')):
-            # 判断流水线执行任务数是否达到限制
-            task_count = await self.__redis.get(REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
-            if task_count is None:
-                task_count = 0
-                await self.__redis.set(REDIS_KEY_PIPELINE_TASK_COUNT.format(name), task_count)
-            else:
-                task_count = int(task_count.decode('utf-8'))
-            if task_count >= PIPELINE_LIMIT:
-                time.sleep(1)
+        while int((await self._redis.get(REDIS_KEY_PIPELINE_FLAG)).decode('utf-8')):
+            if await super().is_over_limit(name):
                 continue
 
             # Lua 脚本
@@ -49,13 +39,20 @@ class ChunkingPipeline(TaskPipeline):
                     """
 
             # 执行 Lua 脚本
-            doc = await self.__redis.eval(script, 2, REDIS_KEY_PIPELINE_QUEUE.format(name),
-                                          REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
-            if doc is None:
+            doc_redis = await self._redis.eval(script, 2, REDIS_KEY_PIPELINE_QUEUE.format(name),
+                                         REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
+            if doc_redis is None:
                 time.sleep(1)
                 continue
+            doc = Document(**json.loads(doc_redis))
             # 判断任务是否暂停
-            if await super().is_pause(doc, name):
+            if await super().is_pause(doc.id, name):
+                # 若任务暂停放回队列底部并且将执行中的数量-1
+                pipeline = self._redis.pipeline()
+                pipeline.multi()
+                await pipeline.lpush(REDIS_KEY_PIPELINE_QUEUE.format(name), doc_redis)
+                await pipeline.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
+                await pipeline.execute()
                 continue
 
             # 执行任务
@@ -64,9 +61,8 @@ class ChunkingPipeline(TaskPipeline):
             # 休眠1秒
             time.sleep(1)
 
-    async def execute(self, doc: str):
+    async def execute(self, doc: Document):
         # TODO NFL 切片的逻辑
-        doc = Document(**json.loads(doc))
         # 初始化文档处理进度
         await super().incr_progress(doc.id, 0)
         if not await super().change_status(doc, name, DocumentStatus.INDEXING):
@@ -101,4 +97,4 @@ class ChunkingPipeline(TaskPipeline):
         # 切片入库后进度增加0.05
         await super().incr_progress(doc.id, 0.05)
         # 切片入库后，执行任务数-1
-        await self.__redis.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
+        await self._redis.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
