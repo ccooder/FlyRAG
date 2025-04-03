@@ -3,13 +3,18 @@
 # Created by Fenglu Niu on 2025/3/17 15:19
 import asyncio
 import json
+import time
 from ctypes.wintypes import HTASK
 from typing import List, Union
 
 from sqlmodel import SQLModel, Field
 
+import common
+from common.mysql_client import MysqlClient
 from common.redis_client import RedisClient
-from flyrag.api.entity import Document, DocumentChunk
+from flyrag.api.entity import Document, DocumentChunk, DocumentUpdate
+from flyrag.api.enums import DocumentStatus
+from flyrag.api.service.document_service import DocumentService
 from flyrag.task import DocumentTaskStatus, TaskPipeline, REDIS_KEY_PIPELINE_FLAG, REDIS_KEY_PIPELINE_QUEUE, \
     chunking_pipeline, embedding_pipeline
 from flyrag.task.chunking_pipeline import ChunkingPipeline
@@ -42,10 +47,11 @@ class TaskDispatcher(object):
         await cls.__redis.set(REDIS_KEY_PIPELINE_FLAG, 1)
         from multiprocessing import Process
         # 启动切片进程
-        chunking = Process(target=chunking_pipeline_in_subprocess, name='p-chunking')
-        chunking.start()
-        embedding = Process(target=embedding_pipeline_in_subprocess, name='p-embedding')
-        embedding.start()
+        for i in range(4):
+            chunking = Process(target=chunking_pipeline_in_subprocess, name=f'p-chunking-{i}')
+            chunking.start()
+            embedding = Process(target=embedding_pipeline_in_subprocess, name=f'p-embedding-{i}')
+            embedding.start()
 
     @classmethod
     async def stop_pipeline(cls):
@@ -58,3 +64,14 @@ class TaskDispatcher(object):
             await cls.__redis.lpush(REDIS_KEY_PIPELINE_QUEUE.format(chunking_pipeline.name), *tasks_dump)
         elif status == DocumentTaskStatus.CHUNKED:
             await cls.__redis.lpush(REDIS_KEY_PIPELINE_QUEUE.format(embedding_pipeline.name), *tasks_dump)
+        elif status == DocumentTaskStatus.INDEXED:
+            session = next(MysqlClient().get_session())
+            try:
+                for doc in tasks:
+                    DocumentService.update_doc(DocumentUpdate(id=doc.id, status=DocumentStatus.AVAILABLE), session, False)
+            except Exception as e:
+                session.rollback()
+                common.get_logger().error('更新文档为可用状态时报错{}', e)
+                return
+            session.commit()
+

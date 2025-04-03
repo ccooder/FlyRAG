@@ -2,7 +2,7 @@
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/14 12:36
 import os
-from typing import Union, Type
+from typing import Union, Type, Generator
 
 from dotenv import load_dotenv
 from sqlalchemy import Select
@@ -32,7 +32,7 @@ class MysqlClient(object):
                                           pool_recycle=3600,
                                           pool_size=1024)
 
-    def get_session(self):
+    def get_session(self) -> Generator[Session, Session, None]:
         with Session(self.__engine) as session:
             yield session
 

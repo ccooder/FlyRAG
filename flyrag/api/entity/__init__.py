@@ -60,6 +60,7 @@ class Document(Entity, table=True):
     name: str = Field(default=None)
     original_name: str = Field(default=None)
     chunk_mode: int = Field(default=None)
+    is_qa: int = Field(default=0)
     size: int = Field(default=None)
     obj_name: str = Field(default=None)
     char_count: int = Field(default=0)
@@ -86,6 +87,7 @@ class DocumentUpdate(UpdateEntity):
     name: str = Field(default=None)
     mode: int = Field(default=None)
     status: int = Field(default=None)
+    is_qa: int = Field(default=0)
     char_count: int = Field(default=0)
     chunk_count: int = Field(default=0)
 

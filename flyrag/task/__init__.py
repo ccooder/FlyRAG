@@ -22,6 +22,7 @@ REDIS_KEY_PIPELINE_FLAG = 'flyrag:pipeline_flag'
 REDIS_KEY_PIPELINE_TASK_COUNT = 'flyrag:pipeline_task_count:{}'
 REDIS_KEY_PIPELINE_QUEUE = 'flyrag:pipeline_queue:{}'
 REDIS_KEY_DOC_PROGRESS = 'flyrag:doc_progress:{}'
+REDIS_KEY_DOC_EMBEDDING_PROGRESS = 'flyrag:embedding_progress:{}'
 
 
 class TaskPipeline(ABC):
@@ -51,7 +52,7 @@ class TaskPipeline(ABC):
             return True
         return False
 
-    async def is_pause(self, doc_id: int, pipeline_name):
+    async def is_pause(self, doc_id: int):
         session = next(MysqlClient().get_session())
         doc_db = session.get(Document, doc_id)
         if doc_db.pause == 1:

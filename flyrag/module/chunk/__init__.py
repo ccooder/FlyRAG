@@ -5,7 +5,9 @@ from abc import ABC, abstractmethod
 from enum import Enum
 from typing import Any
 
-from flyrag.api.entity import Document, ChunkConfig
+from common.mysql_client import MysqlClient
+from flyrag.api.entity import Document, ChunkConfig, DocumentUpdate
+from flyrag.api.service.document_service import DocumentService
 from flyrag.llm import LLM
 
 class BaseChunker(ABC):
@@ -68,6 +70,7 @@ class ChunkerContext(object):
         llm = LLM()
         result = llm.determine_qa(content[:100])
         if result.content == '1':
+            DocumentService().update_doc(DocumentUpdate(id=doc.id, is_qa=1), next(MysqlClient().get_session()))
             from flyrag.module.chunk.qa_chunker import QaChunker
             return QaChunker(content, doc, chunk_config).chunk()
         else:

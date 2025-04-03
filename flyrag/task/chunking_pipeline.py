@@ -40,13 +40,13 @@ class ChunkingPipeline(TaskPipeline):
 
             # 执行 Lua 脚本
             doc_redis = await self._redis.eval(script, 2, REDIS_KEY_PIPELINE_QUEUE.format(name),
-                                         REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
+                                               REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
             if doc_redis is None:
                 time.sleep(1)
                 continue
             doc = Document(**json.loads(doc_redis))
             # 判断任务是否暂停
-            if await super().is_pause(doc.id, name):
+            if await super().is_pause(doc.id):
                 # 若任务暂停放回队列底部并且将执行中的数量-1
                 await super().put_back(name, doc_redis)
                 continue
@@ -58,9 +58,6 @@ class ChunkingPipeline(TaskPipeline):
                 common.get_logger().error('执行切片失败,将任务重新放回队列底部。{}', e)
                 await super().change_status(doc, name, DocumentStatus.QUEUEING)
                 await super().put_back(name, doc_redis)
-
-            # 休眠1秒
-            time.sleep(1)
 
     async def execute(self, doc: Document):
         # TODO NFL 切片的逻辑
@@ -83,10 +80,12 @@ class ChunkingPipeline(TaskPipeline):
             # 保存切片数量至文档信息
             session = next(MysqlClient().get_session())
             try:
-                DocumentService.update_doc(DocumentUpdate(id=doc.id, chunk_count=len(chunks)), session, autocommit=False)
+                DocumentService.update_doc(DocumentUpdate(id=doc.id, chunk_count=len(chunks)), session,
+                                           autocommit=False)
                 # 保存切片到数据库
                 doc_chunks = [
-                    DocumentChunk(doc_id=int(doc.id), chunk=chunk, chunk_no=i + 1, char_count=common.get_char_count(chunk)) for
+                    DocumentChunk(doc_id=int(doc.id), chunk=chunk, chunk_no=i + 1,
+                                  char_count=common.get_char_count(chunk)) for
                     i, chunk in enumerate(chunks)]
                 DocumentChunkService.create_chunks(doc_chunks, session)
                 session.commit()

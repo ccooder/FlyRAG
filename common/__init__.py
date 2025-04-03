@@ -15,6 +15,7 @@ from httpx._urlparse import urlparse
 name = 'common'
 
 DEFAULT_BUCKET_NAME = 'fly-rag'
+DEFAULT_WEAVIATE_COLLECTION = 'fly_rag'
 SALT = 'ZERO_JX_DEEP_SEARCH:'
 REQ_CHECK = "REQ_CHECK"
 
