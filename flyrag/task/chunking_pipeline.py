@@ -10,10 +10,11 @@ import common
 from common.minio_client import MinioClient
 from common.mysql_client import MysqlClient
 from common.redis_client import RedisClient
-from flyrag.api.entity import Entity, Document, DocumentUpdate, DocumentChunk
+from flyrag.api.entity import Entity, Document, DocumentUpdate, DocumentChunk, DocumentContent
 from flyrag.api.enums import DocumentStatus
 from flyrag.api.service.chunk_config_service import ChunkConfigService
 from flyrag.api.service.document_chunk_service import DocumentChunkService
+from flyrag.api.service.document_content_service import DocumentContentService
 from flyrag.api.service.document_service import DocumentService
 from flyrag.module.chunk import ChunkerContext, ChunkMode
 from flyrag.module.document import DocumentParserContext
@@ -60,16 +61,17 @@ class ChunkingPipeline(TaskPipeline):
                 await super().put_back(name, doc_redis)
 
     async def execute(self, doc: Document):
-        # TODO NFL 切片的逻辑
         # 初始化文档处理进度
         await super().incr_progress(doc.id, 0)
         if not await super().change_status(doc, name, DocumentStatus.INDEXING):
             return
         file_path = MinioClient().get_presigned_url(common.DEFAULT_BUCKET_NAME, doc.obj_name)
         content = DocumentParserContext.do_parse(file_path)
+        session = next(MysqlClient().get_session())
         # 统计字符数，去除空格，保存至文档信息
-        DocumentService.update_doc(DocumentUpdate(id=doc.id, char_count=common.get_char_count(content)),
-                                   next(MysqlClient().get_session()))
+        DocumentService.update_doc(DocumentUpdate(id=doc.id, char_count=common.get_char_count(content)), session)
+        # 将文档内容存入数据库
+        DocumentContentService.create_content(DocumentContent(doc_id=doc.id, content=content), session)
         # 解析完文档，进度增加0.05
         await super().incr_progress(doc.id, 0.05)
         # 获取文档的切片配置

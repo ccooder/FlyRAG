@@ -49,6 +49,7 @@ class QueryEntity(SQLModel):
     key: str = Field(default=None)
     status: int = Field(default=None)
 
+
 # 文档
 class Document(Entity, table=True):
     """
@@ -67,6 +68,7 @@ class Document(Entity, table=True):
     chunk_count: int = Field(default=0)
     pause: int = Field(default=0)
 
+
 class DocumentCreate(BaseModel):
     """
     文档实体-创建
@@ -74,11 +76,13 @@ class DocumentCreate(BaseModel):
     kb_id: int = pydantic.Field(..., alias="kbId")
     docs: List[Document] = Field(default=None)
 
+
 class DocumentQuery(QueryEntity):
     """
     文档实体-查询
     """
     kb_id: int = Field(...)
+
 
 class DocumentUpdate(UpdateEntity):
     """
@@ -90,6 +94,7 @@ class DocumentUpdate(UpdateEntity):
     is_qa: int = Field(default=0)
     char_count: int = Field(default=0)
     chunk_count: int = Field(default=0)
+
 
 # 文档切片
 class DocumentChunk(Entity, table=True):
@@ -120,6 +125,7 @@ class ChunkConfig(Entity, table=True):
     chunk_overlap: int = Field(default=200)
     delimiters: str = Field(default='\n\n')
 
+
 # 知识库
 class KnowledgeBase(Entity, table=True):
     """
@@ -129,6 +135,7 @@ class KnowledgeBase(Entity, table=True):
     name: str = Field(default=None, max_length=64)
     profile: str = Field(default=None, max_length=255)
 
+
 class KnowledgeBaseCreate(Entity):
     """
     知识库实体
@@ -137,7 +144,6 @@ class KnowledgeBaseCreate(Entity):
     profile: str = Field(default=None, max_length=255)
     docs: List[Document] = Field(default=None)
     chunk_config: ChunkConfig = Field(default=None)
-
 
     def get_kb(self):
         return KnowledgeBase(**self.model_dump())
@@ -158,6 +164,26 @@ class KnowledgeBaseQuery(QueryEntity):
     name: str = Field(default=None, max_length=64)
     profile: str = Field(default=None, max_length=255)
 
+# 文档内容
+class DocumentContent(Entity, table=True):
+    """
+    切片向量ID集合关联实体
+    """
+    __tablename__ = 'fr_document_content'
+    doc_id: int = Field(default=None)
+    content: str = Field(default=None)
+
+
+# 切片向量ID集合关联实体
+class DocumentChunkVid(Entity, table=True):
+    """
+    切片向量ID集合关联实体
+    """
+    __tablename__ = 'fr_document_chunk_vid'
+    doc_id: int = Field(default=None)
+    chunk_id: int = Field(default=None)
+    vids: str = Field(default=None)
+
 
 # 模型
 class Model(Entity, table=True):
@@ -172,10 +198,9 @@ class Model(Entity, table=True):
     context_length: int = Field(default=4096)
     type: int = Field(default=1)
 
+
 class ModelQuery(QueryEntity):
     """
     模型实体-查询
     """
     type: int = Field(default=1)
-
-

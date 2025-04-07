@@ -12,8 +12,9 @@ import common
 from common import DEFAULT_WEAVIATE_COLLECTION
 from common.mysql_client import MysqlClient
 from common.weaviate_client import WeaviateClient
-from flyrag.api.entity import DocumentChunk
+from flyrag.api.entity import DocumentChunk, DocumentChunkVid
 from flyrag.api.service.chunk_config_service import ChunkConfigService
+from flyrag.api.service.document_chunk_vid_service import DocumentChunkVidService
 from flyrag.api.service.document_service import DocumentService
 from flyrag.api.service.model_service import ModelService
 from flyrag.module.embedding.xinference_embedding import XinferenceEmbedding
@@ -66,7 +67,8 @@ class EmbeddingPipeline(TaskPipeline):
             model = ModelService.get_model(chunk_config.embedding_model_id, session)
             embedding = XinferenceEmbedding(model.base_url, model.uid)
             # 初始化 WeaviateVectorStore
-            wvs = WeaviateVectorStore(client=weaviate_client, index_name=DEFAULT_WEAVIATE_COLLECTION, text_key='text', embedding=embedding)
+            wvs = WeaviateVectorStore(client=weaviate_client, index_name=DEFAULT_WEAVIATE_COLLECTION, text_key='text',
+                                      embedding=embedding)
             # 组装文本与Metadata
             texts = [chunk.chunk]
             metadata = {'doc_id': chunk.doc_id, 'chunk_id': chunk.id}
@@ -80,7 +82,12 @@ class EmbeddingPipeline(TaskPipeline):
                         texts.append(q)
                         metadatas.append(deepcopy(metadata))
             # 向量入库
-            await wvs.aadd_texts(texts, metadatas)
+            vids = await wvs.aadd_texts(texts, metadatas)
+            # 将向量IDs保存，以备后续删除
+            vids_str = ','.join(vids)
+            dcv = DocumentChunkVid(doc_id=chunk.doc_id, chunk_id=chunk.id, vids=vids_str)
+            DocumentChunkVidService.create_chunk_vid([dcv], session)
+
             # 文档索引进度更新
             await super().incr_progress(chunk.doc_id, round(1 / doc.chunk_count * 0.9, 4))
 
@@ -96,4 +103,3 @@ class EmbeddingPipeline(TaskPipeline):
                 await TaskDispatcher.dispatch_task([doc], DocumentTaskStatus.INDEXED)
             # 向量入库成功后执行任务数-1
             await self._redis.decr(REDIS_KEY_PIPELINE_TASK_COUNT.format(name))
-

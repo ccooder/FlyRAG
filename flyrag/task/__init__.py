@@ -17,7 +17,7 @@ from flyrag.api.enums import DocumentStatus
 
 name = 'task'
 
-PIPELINE_LIMIT = 4
+PIPELINE_LIMIT = 7
 REDIS_KEY_PIPELINE_FLAG = 'flyrag:pipeline_flag'
 REDIS_KEY_PIPELINE_TASK_COUNT = 'flyrag:pipeline_task_count:{}'
 REDIS_KEY_PIPELINE_QUEUE = 'flyrag:pipeline_queue:{}'
