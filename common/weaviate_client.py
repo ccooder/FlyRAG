@@ -38,3 +38,4 @@ class WeaviateClient(object):
 if __name__ == '__main__':
     with WeaviateClient().get_client() as client:
         client.is_ready()
+        client.collections.delete_all()

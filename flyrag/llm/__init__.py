@@ -31,3 +31,17 @@ class LLM(object):
         ]
         response = self.__llm.invoke(messages)
         return response
+
+    def query_rewrite(self, text):
+        prompt = PromptTemplate.from_file(f'{common.root_path()}/prompt/query_rewrite_prompt.md')
+        messages = [
+            SystemMessage(content=prompt.template),
+            HumanMessage(content=text)
+        ]
+        response = self.__llm.invoke(messages)
+        return response
+
+
+if __name__ == '__main__':
+    llm = LLM()
+    print(llm.query_rewrite('什么情况下能申请劳动仲裁'))

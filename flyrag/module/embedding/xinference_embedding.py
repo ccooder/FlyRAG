@@ -31,4 +31,4 @@ class XinferenceEmbedding(Embeddings):
         response = self.__client.get_model(self.__model_uid).create_embedding(
             input=text,
         )
-        return response['data']['embedding']
+        return response['data'][0]['embedding']
