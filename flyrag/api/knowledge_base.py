@@ -27,9 +27,16 @@ async def create_kb(kb_create: KnowledgeBaseCreate, session: SessionDep):
         return R.fail('知识库配置不能为空')
     try:
         session.add(kb_create.get_kb())
+        # 若存在切片配置，保存
         chunk_config = kb_create.chunk_config
-        chunk_config.target_id = kb_create.get_kb().id
-        session.add(chunk_config)
+        if chunk_config:
+            chunk_config.target_id = kb_create.get_kb().id
+            session.add(chunk_config)
+        # 若存在检索配置，保存
+        retrival_config = kb_create.retrival_config
+        if retrival_config:
+            retrival_config.kb_id = kb_create.get_kb().id
+            session.add(retrival_config)
         if kb_create.docs and len(kb_create.docs) > 0:
             DocumentService.create_docs(kb_create.id, kb_create.docs, session)
         session.commit()

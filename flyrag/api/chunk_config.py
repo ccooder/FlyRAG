@@ -1,13 +1,11 @@
 #! /usr/bin/python
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/20 10:48
-from copy import deepcopy
 from typing import Annotated
 
 from fastapi import APIRouter
 from fastapi.params import Depends
-from sqlalchemy import func
-from sqlmodel import Session, select, col
+from sqlmodel import Session, select
 
 import common
 from common.mysql_client import MysqlClient
@@ -21,8 +19,8 @@ router = APIRouter(prefix='/chunk_config', tags=["chunk_config"])
 SessionDep = Annotated[Session, Depends(MysqlClient().get_session)]
 
 
-@router.post("/create")
-async def create_cc(cc: ChunkConfig, session: SessionDep):
+@router.post("/submit")
+async def submit_cc(cc: ChunkConfig, session: SessionDep):
     try:
         if cc.chunk_size > 2048:
             return R.fail('切片大小不能超过2048')

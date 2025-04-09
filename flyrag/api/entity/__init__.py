@@ -126,6 +126,16 @@ class ChunkConfig(Entity, table=True):
     chunk_overlap: int = Field(default=200)
     delimiters: str = Field(default='\n\n')
 
+# 检索配置
+class RetrivalConfig(Entity, table=True):
+    __tablename__ = 'fr_retrival_config'
+    kb_id: int = Field(default=None)
+    reranker_model_id: int = Field(default=None)
+    mode: int = Field(default=1)
+    top_n: int = Field(default=3, max_items=5)
+    top_k: int = Field(default=5, max_items=10)
+    score: float = Field(default=0, max_items=1)
+
 
 # 知识库
 class KnowledgeBase(Entity, table=True):
@@ -145,6 +155,7 @@ class KnowledgeBaseCreate(Entity):
     profile: str = Field(default=None, max_length=255)
     docs: List[Document] = Field(default=None)
     chunk_config: ChunkConfig = Field(default=None)
+    retrival_config: RetrivalConfig = Field(default=None)
 
     def get_kb(self):
         return KnowledgeBase(**self.model_dump())

@@ -3,9 +3,6 @@
 # Created by Fenglu Niu on 2025/4/8 15:09
 from langchain_core.load import loads, dumps
 
-def reranker(results: list[list], k=60):
-    pass
-
 def reciprocal_rank_fusion(results: list[list], k=30):
     fused_scores = {}
     for docs in results:
