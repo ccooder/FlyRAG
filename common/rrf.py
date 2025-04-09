@@ -6,7 +6,7 @@ from langchain_core.load import loads, dumps
 def reranker(results: list[list], k=60):
     pass
 
-def reciprocal_rank_fusion(results: list[list], k=60):
+def reciprocal_rank_fusion(results: list[list], k=30):
     fused_scores = {}
     for docs in results:
         # Assumes the docs are returned in sorted order of relevance

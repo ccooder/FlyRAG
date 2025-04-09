@@ -120,6 +120,7 @@ class ChunkConfig(Entity, table=True):
     target_id: int = Field(default=None)
     type: int = Field(default=None)
     embedding_model_id: int = Field(...)
+    reranker_model_id: int = Field(...)
     mode: int = Field(default=1)
     chunk_size: int = Field(default=512)
     chunk_overlap: int = Field(default=200)
