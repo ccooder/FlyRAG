@@ -15,15 +15,14 @@ from common.rrf import reciprocal_rank_fusion
 from common.weaviate_client import WeaviateClient
 from flyrag.api.service.chunk_config_service import ChunkConfigService
 from flyrag.api.service.model_service import ModelService
+from flyrag.api.service.retrival_config_service import RetrivalConfigService
 from flyrag.llm import LLM
-from flyrag.module.embedding.xinference_embedding import XinferenceEmbedding
-from flyrag.module.reranker.xinference_cross_encoder import XinferenceCrossEncoder
+from flyrag.module import ModelProviderContext
 
 
 class RagFusionRetriever(object):
 
-    def __init__(self, kb_id: int, query: str, top_k=10, k=10):
-        self.__k = k
+    def __init__(self, kb_id: int, query: str, top_k: int=None):
         self.__top_k = top_k
         self.__kb_id = kb_id
         self.__query = query
@@ -35,16 +34,17 @@ class RagFusionRetriever(object):
                 RunnablePassthrough() | self.__llm.query_rewrite | StrOutputParser() | loads
         )
         chunk_config = ChunkConfigService.get_chunk_config(self.__kb_id, next(MysqlClient().get_session()))
+        retrival_config = RetrivalConfigService.get_retrival_config(self.__kb_id, next(MysqlClient().get_session()))
         embedding_model = ModelService.get_model(chunk_config.embedding_model_id, next(MysqlClient().get_session()))
-        reranker_model = ModelService.get_model(chunk_config.reranker_model_id, next(MysqlClient().get_session()))
-        embedding = XinferenceEmbedding(base_url=embedding_model.base_url, model_uid=embedding_model.uid)
-        reranker = XinferenceCrossEncoder(base_url=reranker_model.base_url, model_uid=reranker_model.uid)
+        reranker_model = ModelService.get_model(retrival_config.reranker_model_id, next(MysqlClient().get_session()))
+        embedding = ModelProviderContext(embedding_model).get_embedding()
+        reranker = ModelProviderContext(reranker_model).get_cross_encoder()
         with WeaviateClient().get_client() as weaviate_client:
-            compressor = CrossEncoderReranker(model=reranker, top_n=3)
 
             wvs = WeaviateVectorStore(client=weaviate_client, index_name=DEFAULT_WEAVIATE_COLLECTION, text_key='text',
                                       embedding=embedding)
-            retriever = wvs.as_retriever(search_kwargs={'k': self.__top_k})
+            compressor = CrossEncoderReranker(model=reranker, top_n=retrival_config.top_n)
+            retriever = wvs.as_retriever(search_kwargs={'k': self.__top_k if self.__top_k else retrival_config.top_k})
             compression_retriever = ContextualCompressionRetriever(
                 base_compressor=compressor, base_retriever=retriever
             )
@@ -56,4 +56,4 @@ class RagFusionRetriever(object):
             print(chain.invoke(self.__query))
 
 if __name__ == '__main__':
-    RagFusionRetriever(kb_id=559627226199494656, query="我的案件结案了吗").retrieve()
+    RagFusionRetriever(kb_id=562644863867293696, query="我的案件结案了吗").retrieve()

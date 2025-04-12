@@ -17,7 +17,7 @@ from flyrag.api.service.chunk_config_service import ChunkConfigService
 from flyrag.api.service.document_chunk_vid_service import DocumentChunkVidService
 from flyrag.api.service.document_service import DocumentService
 from flyrag.api.service.model_service import ModelService
-from flyrag.module.embedding.xinference_embedding import XinferenceEmbedding
+from flyrag.module import ModelProviderContext
 from flyrag.task import TaskPipeline, REDIS_KEY_PIPELINE_TASK_COUNT, \
     REDIS_KEY_PIPELINE_QUEUE, REDIS_KEY_DOC_EMBEDDING_PROGRESS, REDIS_KEY_DOC_PROGRESS, DocumentTaskStatus
 
@@ -65,7 +65,7 @@ class EmbeddingPipeline(TaskPipeline):
             # 获取向量模型配置
             chunk_config = ChunkConfigService.get_chunk_config(chunk.doc_id, session)
             model = ModelService.get_model(chunk_config.embedding_model_id, session)
-            embedding = XinferenceEmbedding(model.base_url, model.uid)
+            embedding = ModelProviderContext(model).get_embedding()
             # 初始化 WeaviateVectorStore
             wvs = WeaviateVectorStore(client=weaviate_client, index_name=DEFAULT_WEAVIATE_COLLECTION, text_key='text',
                                       embedding=embedding)
