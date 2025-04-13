@@ -119,11 +119,7 @@ async def list_doc(doc_query: DocumentQuery, session: SessionDep, current: int =
                    size: Annotated[int, Query(le=100)] = 100):
     # 查询列表
     offset, limit = (current - 1) * size, size
-    statement = MysqlClient.fill_statement(select(Document).offset(offset).limit(limit), Document, doc_query)
-    # 如果有自定义查询字段，请在此自行添加
-    statement = statement.where(Document.kb_id == doc_query.kb_id)
-    docs = session.exec(statement).all()
-
+    docs = DocumentService.list_doc(doc_query, session, offset, limit)
     # 查询总数
     count_statement = MysqlClient.fill_statement(select(func.count(col(Document.id))), Document, doc_query)
     count_statement = count_statement.where(Document.kb_id == doc_query.kb_id)

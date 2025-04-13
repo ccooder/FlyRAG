@@ -12,11 +12,12 @@ from sqlmodel import SQLModel, Field
 import common
 from common.mysql_client import MysqlClient
 from common.redis_client import RedisClient
-from flyrag.api.entity import Document, DocumentChunk, DocumentUpdate
+from flyrag.api.entity import Document, DocumentChunk, DocumentUpdate, DocumentQuery
 from flyrag.api.enums import DocumentStatus
 from flyrag.api.service.document_service import DocumentService
 from flyrag.task import DocumentTaskStatus, TaskPipeline, REDIS_KEY_PIPELINE_FLAG, REDIS_KEY_PIPELINE_QUEUE, \
-    chunking_pipeline, embedding_pipeline
+    chunking_pipeline, embedding_pipeline, REDIS_KEY_PIPELINE_TASK_COUNT, REDIS_KEY_DOC_PROGRESS, \
+    REDIS_KEY_DOC_EMBEDDING_PROGRESS
 from flyrag.task.chunking_pipeline import ChunkingPipeline
 from flyrag.task.embedding_pipeline import EmbeddingPipeline
 
@@ -43,7 +44,26 @@ class TaskDispatcher(object):
             TaskDispatcher.__is_first = False
 
     @classmethod
+    async def reset_pipeline(cls):
+        # 获取数据库进行中的任务
+        session = next(MysqlClient().get_session())
+        docs = DocumentService.list_doc(DocumentQuery(status=DocumentStatus.INDEXING), session)
+        for doc in docs:
+            doc_id = doc.id
+            # TODO NFL 1. 删除切片及切片向量 2. 删除redis中的任务 3. 将文档改为排队中
+
+        # 清空redis任务队列与标记
+        rc = RedisClient()
+        await rc.delete_keys_with_prefix(REDIS_KEY_PIPELINE_TASK_COUNT)
+        await rc.delete_keys_with_prefix(REDIS_KEY_PIPELINE_QUEUE)
+        await rc.delete_keys_with_prefix(REDIS_KEY_DOC_PROGRESS)
+        await rc.delete_keys_with_prefix(REDIS_KEY_DOC_EMBEDDING_PROGRESS)
+
+
+    @classmethod
     async def start_pipeline(cls):
+        # 开始流水线前，先重置进行的中的任务
+        await cls.reset_pipeline()
         await cls.__redis.set(REDIS_KEY_PIPELINE_FLAG, 1)
         from multiprocessing import Process
         # 启动切片进程

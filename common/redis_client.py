@@ -30,3 +30,11 @@ class RedisClient(object):
 
     def get_redis(self):
         return Redis(connection_pool=self.__pool)
+
+    async def delete_keys_with_prefix(self, prefix):
+        redis = self.get_redis()
+        cursor = '0'
+        while cursor != 0:
+            cursor, keys = redis.scan(cursor=cursor, match=f"{prefix}*", count=1000)
+            if keys:
+                await redis.delete(*keys)

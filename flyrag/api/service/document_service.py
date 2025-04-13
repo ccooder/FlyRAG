@@ -8,8 +8,9 @@ from typing import List, Type
 from sqlmodel import Session, select
 
 from common import snowflake
+from common.mysql_client import MysqlClient
 from common.snowflake import Snowflake
-from flyrag.api.entity import Document, DocumentUpdate, ChunkConfig
+from flyrag.api.entity import Document, DocumentUpdate, ChunkConfig, DocumentQuery
 from flyrag.api.enums import ChunkConfigType
 from flyrag.task import DocumentTaskStatus
 
@@ -40,6 +41,15 @@ class DocumentService(object):
     @staticmethod
     def get_doc(doc_id: int, session: Session) -> Type[Document]:
         return session.get(Document, doc_id)
+
+    @staticmethod
+    def list_doc(doc_query: DocumentQuery, session: Session, offset: int=0, limit: int=1000) -> List[Document]:
+        statement = MysqlClient.fill_statement(select(Document).offset(offset).limit(limit), Document, doc_query)
+        # 如果有自定义查询字段，请在此自行添加
+        if doc_query.kb_id:
+            statement = statement.where(Document.kb_id == doc_query.kb_id)
+        docs = session.exec(statement).all()
+        return docs
 
     @staticmethod
     def update_doc(doc: DocumentUpdate, session: Session, autocommit: bool = True):
