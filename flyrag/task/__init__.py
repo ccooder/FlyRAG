@@ -26,7 +26,7 @@ REDIS_KEY_DOC_EMBEDDING_PROGRESS = 'flyrag:embedding_progress:{}'
 
 
 class TaskPipeline(ABC):
-    _redis: Redis = RedisClient().get_redis()
+    _redis: Redis = RedisClient().get_aredis()
 
     @abstractmethod
     async def start(self):

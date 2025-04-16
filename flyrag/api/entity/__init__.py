@@ -1,6 +1,7 @@
 #! /usr/bin/python
 # encoding=utf-8
 # Created by Fenglu Niu on 2025/3/14 11:11
+import asyncio
 from datetime import datetime
 from typing import List, Union
 
@@ -81,7 +82,7 @@ class DocumentQuery(QueryEntity):
     """
     文档实体-查询
     """
-    kb_id: int = Field(...)
+    kb_id: int = Field(default=None)
 
 
 class DocumentUpdate(UpdateEntity):
@@ -109,6 +110,13 @@ class DocumentChunk(Entity, table=True):
     chunk_no: int = Field(default=None)
     char_count: int = Field(default=None)
     keyword: str = Field(default=None)
+
+class DocumentChunkQuery(QueryEntity):
+    """
+    文档切片实体-查询
+    """
+    doc_id: int = Field(default=None)
+    chunk_id: int = Field(default=None)
 
 
 # 切片配置
@@ -194,6 +202,13 @@ class DocumentChunkVid(Entity, table=True):
     doc_id: int = Field(default=None)
     chunk_id: int = Field(default=None)
     vids: str = Field(default=None)
+
+class DocumentChunkVidQuery(QueryEntity):
+    """
+    切片向量ID集合查询实体
+    """
+    doc_id: int = Field(default=None)
+    chunk_id: int = Field(default=None)
 
 
 # 模型

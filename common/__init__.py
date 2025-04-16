@@ -19,6 +19,9 @@ DEFAULT_WEAVIATE_COLLECTION = 'fly_rag'
 SALT = 'ZERO_JX_DEEP_SEARCH:'
 REQ_CHECK = "REQ_CHECK"
 
+# REDIS LOCK
+REDIS_LOCK_SNOWFLAKE = 'REDIS_LOCK_SNOWFLAKE'
+
 
 class FlyJSONEncoder(json.JSONEncoder):
     def default(self, obj):

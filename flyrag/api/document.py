@@ -117,6 +117,8 @@ async def resume(id: int, session: SessionDep):
 @router.post("/list")
 async def list_doc(doc_query: DocumentQuery, session: SessionDep, current: int = 1,
                    size: Annotated[int, Query(le=100)] = 100):
+    if not doc_query.kb_id:
+        return R.fail('知识库id不能为空')
     # 查询列表
     offset, limit = (current - 1) * size, size
     docs = DocumentService.list_doc(doc_query, session, offset, limit)
