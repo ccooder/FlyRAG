@@ -32,3 +32,16 @@ async def list_chunk(chunk_query: DocumentChunkQuery, session: SessionDep, curre
 
     page = Page.of(current=current, size=size, total=total, records=docs)
     return R.ok(data=page)
+
+@router.post("/toggle")
+async def toggle(id: int, session: SessionDep):
+    if not id:
+        return R.fail('id不能为空')
+    chunk = session.get(DocumentChunk, id)
+    if not chunk:
+        return R.fail('段落不存在')
+    if chunk.status == 1:
+        result = await DocumentChunkService.disable_chunk(chunk, session)
+    else:
+        result = await DocumentChunkService.enable_chunk(chunk, session)
+    return R.handle(result)

@@ -54,18 +54,9 @@ class TaskDispatcher(object):
         for doc in docs:
             session = next(MysqlClient().get_session())
             doc_id = doc.id
-            # TODO NFL 1. 删除切片及切片向量 2. 删除redis中的任务 3. 将文档改为排队中
-            doc_vids = DocumentChunkVidService.list_vids(DocumentChunkVidQuery(doc_id=doc_id), session)
-            # 遍历删除向量数据库的关联向量
-            with WeaviateClient().get_client() as weaviate_client:
-                wvs = WeaviateVectorStore(client=weaviate_client, index_name=common.DEFAULT_WEAVIATE_COLLECTION, text_key='text')
-                ids = []
-                for doc_vid in doc_vids:
-                    ids.extend(doc_vid.vids.split(','))
-                if len(ids) > 0:
-                    await wvs.adelete(ids)
+            # 1. 删除切片及切片向量 2. 删除redis中的任务 3. 将文档改为排队中
             # 删除chunk_vid
-            DocumentChunkVidService.delete_vids(DocumentChunkVidQuery(doc_id=doc_id), session)
+            await DocumentChunkVidService.delete_vids(DocumentChunkVidQuery(doc_id=doc_id), session)
             # 删除文档切片
             DocumentChunkService.delete_chunks(DocumentChunkQuery(doc_id=doc_id), session)
             session.commit()

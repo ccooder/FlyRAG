@@ -3,14 +3,17 @@
 # Created by Fenglu Niu on 2025/3/28 10:15
 import asyncio
 from copy import deepcopy
-from typing import List
+from typing import List, Type
 
 from sqlalchemy import delete
 from sqlmodel import Session, select
 
+import common
 from common.mysql_client import MysqlClient
-from flyrag.api.entity import DocumentChunk, DocumentChunkQuery
-from flyrag.task import DocumentTaskStatus
+from common.redis_client import RedisClient
+from flyrag.api.entity import DocumentChunk, DocumentChunkQuery, DocumentChunkVidQuery
+from flyrag.api.service.document_chunk_vid_service import DocumentChunkVidService
+from flyrag.task import DocumentTaskStatus, REDIS_KEY_PIPELINE_QUEUE, embedding_pipeline
 
 
 class DocumentChunkService(object):
@@ -50,3 +53,35 @@ class DocumentChunkService(object):
     def get_chunks(chunk_ids: List[int], session: Session):
         statement = select(DocumentChunk).where(DocumentChunk.id.in_(chunk_ids))
         return session.exec(statement).all()
+
+    @staticmethod
+    async def disable_chunk(chunk: Type[DocumentChunk], session: Session):
+        try:
+            # 删除向量关联
+            await DocumentChunkVidService.delete_vids(DocumentChunkVidQuery(chunk_id=chunk.id), session, autocommit=False)
+            chunk_update = DocumentChunk(id=chunk.id, status=0)
+            chunk.sqlmodel_update(chunk_update.model_dump(exclude_unset=True))
+            session.add(chunk)
+            session.commit()
+            return True
+        except Exception as e:
+            common.get_logger().error('禁用切片[id={}]报错:{}', chunk.id, e)
+            session.rollback()
+        return False
+
+    @staticmethod
+    async def enable_chunk(chunk: Type[DocumentChunk], session: Session):
+        try:
+            chunk_copy = deepcopy(chunk)
+            chunk_update = DocumentChunk(id=chunk.id, status=1)
+            chunk.sqlmodel_update(chunk_update.model_dump(exclude_unset=True))
+            session.add(chunk)
+            # 将启用的段落加个塞儿，立即执行
+            await RedisClient().get_aredis().rpush(REDIS_KEY_PIPELINE_QUEUE.format(embedding_pipeline.name),
+                                                   chunk_copy.model_dump_json())
+            session.commit()
+            return True
+        except Exception as e:
+            common.get_logger().error('启用切片[id={}]报错:{}', chunk.id, e)
+            session.rollback()
+        return False

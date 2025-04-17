@@ -21,6 +21,13 @@ class R(BaseModel):
     def fail(cls, msg: str):
         return R(code=400, data=None, msg=msg, status=False).__dict__
 
+    @classmethod
+    def handle(cls, status: bool):
+        if status:
+            return cls.ok()
+        return cls.fail(msg="操作失败")
+
+
 class Page(BaseModel):
     total: int = Field(0, description="总数")
     current: int = Field(1, description="当前页")

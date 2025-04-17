@@ -89,12 +89,11 @@ async def pause(id: int, session: SessionDep):
         return R.fail('不可重复暂停')
     if doc_db.status != DocumentStatus.QUEUEING.value and doc_db.status != DocumentStatus.INDEXING.value:
         return R.fail('文档未在处理中，不可暂停')
-    if doc_db.pause == 0:
-        doc = Document(id=doc_db.id, pause=1)
-        doc_db.sqlmodel_update(doc.model_dump(exclude_unset=True))
-        session.add(doc_db)
-        session.commit()
-        return R.ok('暂停成功')
+    doc = Document(id=doc_db.id, pause=1)
+    doc_db.sqlmodel_update(doc.model_dump(exclude_unset=True))
+    session.add(doc_db)
+    session.commit()
+    return R.ok('暂停成功')
 
 
 @router.post("/resume")
@@ -104,12 +103,11 @@ async def resume(id: int, session: SessionDep):
         return R.fail('文档不存在')
     if doc_db.pause == 0:
         return R.fail('文档未暂停')
-    if doc_db.pause == 1:
-        doc = Document(id=doc_db.id, pause=0)
-        doc_db.sqlmodel_update(doc.model_dump(exclude_unset=True))
-        session.add(doc_db)
-        session.commit()
-        return R.ok('恢复成功')
+    doc = Document(id=doc_db.id, pause=0)
+    doc_db.sqlmodel_update(doc.model_dump(exclude_unset=True))
+    session.add(doc_db)
+    session.commit()
+    return R.ok('恢复成功')
 
 
 @router.post("/list")
