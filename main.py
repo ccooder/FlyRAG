@@ -7,7 +7,7 @@ from fastapi import FastAPI
 from starlette.middleware.cors import CORSMiddleware
 
 from common.redis_client import RedisClient
-from flyrag.api import document, knowledge_base, model, chunk_config, retrival_config
+from flyrag.api import document, knowledge_base, model, chunk_config, retrival_config, document_chunk
 from flyrag.api import file
 from flyrag.task.task_dispatcher import TaskDispatcher
 
@@ -43,6 +43,7 @@ app.add_middleware(
 app.include_router(file.router)
 app.include_router(knowledge_base.router)
 app.include_router(document.router)
+app.include_router(document_chunk.router)
 app.include_router(model.router)
 app.include_router(chunk_config.router)
 app.include_router(retrival_config.router)
