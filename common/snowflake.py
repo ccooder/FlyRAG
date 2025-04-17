@@ -29,7 +29,7 @@ class Snowflake(object):
             self.sequence = sequence
             self.rc = RedisClient()
             # 起始时间戳，可以自定义为服务启动时间
-            self.twepoch = 1609459200000  # 2021-01-01 00:00:00
+            self.twepoch = 1743984000000
 
             # ID位数分配
             self.worker_id_bits = 5

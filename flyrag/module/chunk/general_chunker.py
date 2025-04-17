@@ -9,7 +9,8 @@ from langchain_text_splitters import CharacterTextSplitter, RecursiveCharacterTe
 
 class GeneralChunker(BaseChunker):
     def chunk(self):
-        cts = CharacterTextSplitter(separator=self.chunk_config.delimiters, chunk_size=self.chunk_config.chunk_size,
-                                    chunk_overlap=self.chunk_config.chunk_overlap)
+        cts = RecursiveCharacterTextSplitter(separators=[self.chunk_config.delimiters, '\n'],
+                                             chunk_size=self.chunk_config.chunk_size,
+                                             chunk_overlap=self.chunk_config.chunk_overlap)
         chunks = cts.split_text(self.content)
         return chunks

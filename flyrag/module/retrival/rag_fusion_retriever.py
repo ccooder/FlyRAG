@@ -53,7 +53,7 @@ class RagFusionRetriever(object):
                     | compression_retriever.map()
                     | reciprocal_rank_fusion
             )
-            print(chain.invoke(self.__query))
+            return chain.invoke(self.__query)
 
 if __name__ == '__main__':
-    RagFusionRetriever(kb_id=562644863867293696, query="我的案件结案了吗").retrieve()
+    RagFusionRetriever(kb_id=558200461551865856, query="我的案件结案了吗").retrieve()

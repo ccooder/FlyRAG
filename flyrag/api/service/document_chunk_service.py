@@ -6,7 +6,7 @@ from copy import deepcopy
 from typing import List
 
 from sqlalchemy import delete
-from sqlmodel import Session
+from sqlmodel import Session, select
 
 from common.mysql_client import MysqlClient
 from flyrag.api.entity import DocumentChunk, DocumentChunkQuery
@@ -35,3 +35,8 @@ class DocumentChunkService(object):
         if autocommit:
             session.commit()
         return result.rowcount
+
+    @staticmethod
+    def get_chunks(chunk_ids: List[int], session: Session):
+        statement = select(DocumentChunk).where(DocumentChunk.id.in_(chunk_ids))
+        return session.exec(statement).all()
