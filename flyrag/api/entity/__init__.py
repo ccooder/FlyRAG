@@ -183,6 +183,16 @@ class KnowledgeBaseQuery(QueryEntity):
     name: str = Field(default=None, max_length=64)
     profile: str = Field(default=None, max_length=255)
 
+class KnowledgeBaseRecall(BaseModel):
+    """
+    知识库实体
+    """
+    kb_id: int = Field(default=None)
+    query: str = Field(default=None)
+    retrival_config: RetrivalConfig = Field(default=None)
+
+
+
 # 文档内容
 class DocumentContent(Entity, table=True):
     """

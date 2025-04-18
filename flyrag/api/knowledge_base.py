@@ -11,7 +11,7 @@ from sqlmodel import Session, select, col
 import common
 from flyrag.api import R, Page
 from flyrag.api.entity import KnowledgeBase, KnowledgeBaseUpdate, DeleteEntity, KnowledgeBaseQuery, KnowledgeBaseCreate, \
-    Document
+    Document, KnowledgeBaseRecall
 from common.mysql_client import MysqlClient
 from flyrag.api.service.document_service import DocumentService
 
@@ -97,3 +97,12 @@ async def list_kb(kb: KnowledgeBaseQuery, session: SessionDep, current: int = 1,
 
     page = Page.of(current=current, size=size, total=total, records=kbs)
     return R.ok(data=page)
+
+@router.post("/recall")
+async def recall(kb_recall: KnowledgeBaseRecall, session: SessionDep):
+    kb = session.get(KnowledgeBase, kb_recall.kb_id)
+    if not kb:
+        return R.fail('知识库不存在')
+    from flyrag.module.retrival.rag_fusion_retriever import RagFusionRetriever
+    result = RagFusionRetriever(kb_recall.kb_id, kb_recall.query).retrieve(kb_recall.retrival_config)
+    return R.ok(data=result)

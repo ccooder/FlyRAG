@@ -13,6 +13,7 @@ from common import DEFAULT_WEAVIATE_COLLECTION
 from common.mysql_client import MysqlClient
 from common.rrf import reciprocal_rank_fusion
 from common.weaviate_client import WeaviateClient
+from flyrag.api.entity import RetrivalConfig
 from flyrag.api.service.chunk_config_service import ChunkConfigService
 from flyrag.api.service.model_service import ModelService
 from flyrag.api.service.retrival_config_service import RetrivalConfigService
@@ -29,12 +30,13 @@ class RagFusionRetriever(object):
         self.__llm = LLM()
 
     @exec_time
-    def retrieve(self):
+    def retrieve(self, retrival_config: RetrivalConfig=None):
         generate_queries = (
                 RunnablePassthrough() | self.__llm.query_rewrite | StrOutputParser() | loads
         )
         chunk_config = ChunkConfigService.get_chunk_config(self.__kb_id, next(MysqlClient().get_session()))
-        retrival_config = RetrivalConfigService.get_retrival_config(self.__kb_id, next(MysqlClient().get_session()))
+        if not retrival_config:
+            retrival_config = RetrivalConfigService.get_retrival_config(self.__kb_id, next(MysqlClient().get_session()))
         embedding_model = ModelService.get_model(chunk_config.embedding_model_id, next(MysqlClient().get_session()))
         reranker_model = ModelService.get_model(retrival_config.reranker_model_id, next(MysqlClient().get_session()))
         embedding = ModelProviderContext(embedding_model).get_embedding()
