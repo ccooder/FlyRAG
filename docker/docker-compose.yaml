@@ -4,6 +4,7 @@ services:
     build:
       context: ../
       dockerfile: Dockerfile
+    image: flyrag-api:latest
     restart: always
     ports:
       - "8000:8000"
@@ -54,6 +55,7 @@ services:
       - ./volumes/mysql-data:/var/lib/mysql
       - ./volumes/mysql-config:/etc/mysql/conf.d
       - ./volumes/mysql-logs:/logs
+      - ./fly_rag.sql:/docker-entrypoint-initdb.d/fly_rag.sql
     healthcheck:
       test: ['CMD', 'mysqladmin', 'ping', '-h', '127.0.0.1', '-u', 'root', '--password=${MYSQL_ROOT_PASSWORD}']
       interval: 30s
