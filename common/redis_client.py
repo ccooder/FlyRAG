@@ -46,7 +46,6 @@ class RedisClient(object):
         cursor = '0'
         while cursor != 0:
             cursor, keys = await aredis.scan(cursor=cursor, match=f"{prefix}*", count=1000)
-            print(keys)
             if keys:
                 await aredis.delete(*keys)
 
