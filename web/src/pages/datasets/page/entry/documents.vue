@@ -1,7 +1,7 @@
 <!--
  * @Author: WuFeng <763467339@qq.com>
  * @Date: 2025-03-20 14:21:13
- * @LastEditTime: 2025-03-25 16:26:42
+ * @LastEditTime: 2025-07-23 17:27:55
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
  * @FilePath: \FlyRAG\web\src\pages\datasets\page\entry\documents.vue
@@ -33,6 +33,13 @@
             :pagination="{ current: listState.query.current, pageSize: listState.query.size, total: listState.total }"
           >
             <template #bodyCell="{ column, record }">
+              <template v-if="column.key === 'name'">
+                <span>
+                  <router-link :to="{ path: `/datasets/${props.kbId}/documents/${record.id}` }">
+                    {{ record.name }}
+                  </router-link>
+                </span>
+              </template>
               <template v-if="column.key === 'chunk_mode'">
                 <span>
                   <a-tag
@@ -253,6 +260,8 @@ const confirmResume = async (row) => {
 
 // 切换状态
 const onSwitchChange = async (val, row) => {
+  console.log(`🚀 ~ onSwitchChange ~ row:`, row)
+  console.log(`🚀 ~ onSwitchChange ~ val:`, val)
   try {
     await saveUpdate({
       id: row.id,
