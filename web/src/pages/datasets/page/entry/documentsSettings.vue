@@ -146,7 +146,7 @@ const getModeListData = async () => {
     const res = await getModeList({
       type: 2
     })
-    modeList.value = res?.data??[]
+    modeList.value = res?.data?.records??[]
   } catch (error) {
   }
 }

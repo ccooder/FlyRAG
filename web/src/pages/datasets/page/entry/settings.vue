@@ -1,7 +1,7 @@
 <!--
  * @Author: WuFeng <763467339@qq.com>
  * @Date: 2025-03-24 16:59:22
- * @LastEditTime: 2025-03-25 13:45:02
+ * @LastEditTime: 2025-07-23 15:35:04
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
  * @FilePath: \FlyRAG\web\src\pages\datasets\page\entry\settings.vue
@@ -142,7 +142,8 @@ const getModeListData = async () => {
     const res = await getModeList({
       type: 2
     })
-    modeList.value = res?.data??[]
+    modeList.value = res?.data?.records??[]
+
   } catch (error) {
   }
 }
