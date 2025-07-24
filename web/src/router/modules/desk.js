@@ -1,7 +1,16 @@
 /*
  * @Author: WuFeng <763467339@qq.com>
+ * @Date: 2025-03-17 12:18:18
+ * @LastEditTime: 2025-07-24 17:51:24
+ * @LastEditors: WuFeng <763467339@qq.com>
+ * @Description: 
+ * @FilePath: \FlyRAG\web\src\router\modules\desk.js
+ * @Copyright 版权声明
+ */
+/*
+ * @Author: WuFeng <763467339@qq.com>
  * @Date: 2024-06-05 13:49:12
- * @LastEditTime: 2025-07-23 17:38:41
+ * @LastEditTime: 2025-07-24 17:36:02
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
  * @FilePath: \FlyRAG\web\src\router\modules\desk.js

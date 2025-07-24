@@ -27,6 +27,16 @@ const routes = [
     children: [
       ...DeskRoutes
     ]
+  },
+  {
+    path: '/chat',
+    props: true,
+    name: 'Chat',
+    component: () => import('@/pages/chat/page/entry/index.vue'),
+    hidden: true,
+    meta: {
+      title: 'AI助手'
+    }
   }
 ]
 
