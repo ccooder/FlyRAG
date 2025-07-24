@@ -1,7 +1,7 @@
 /*
  * @Author: WuFeng <763467339@qq.com>
  * @Date: 2025-03-20 16:59:36
- * @LastEditTime: 2025-03-25 10:50:30
+ * @LastEditTime: 2025-07-24 14:22:11
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
  * @FilePath: \FlyRAG\web\src\api\documents.js
@@ -72,6 +72,25 @@ export function saveResume(params = {}) {
 export function savePause(params = {}) {
   return request({
     url: '/document/pause',
+    method: 'post',
+    params
+  })
+}
+
+// 段落列表
+export function getChunkList(params = {}, query = {}) {
+  return request({
+    url: '/chunk/list',
+    method: 'post',
+    data: params,
+    params: query
+  })
+}
+
+// 段落 启用/禁用
+export function getChunkToggle(params = {}) {
+  return request({
+    url: '/chunk/toggle',
     method: 'post',
     params
   })

@@ -1,7 +1,7 @@
 <!--
  * @Author: WuFeng <763467339@qq.com>
  * @Date: 2025-07-23 17:30:17
- * @LastEditTime: 2025-07-23 17:50:51
+ * @LastEditTime: 2025-07-24 14:18:26
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
  * @FilePath: \FlyRAG\web\src\pages\datasets\page\entry\documentsParagraph.vue
@@ -12,11 +12,37 @@
     <ManageLeft></ManageLeft>
     <div class="pageWrap-main">
       <h2 class="title">
-        文档 - 段落
+        文档 - 分段
       </h2>
       <a-spin :tip="spinningConfig.tip" :spinning="spinningConfig.spinning">
-        啊手动阀
-        <!-- layout="vertical" -->
+        <h3 class="totalH">{{ listState?.total }} 分段</h3>
+        <a-list 
+          item-layout="horizontal" 
+          :data-source="listState.data" 
+          :pagination="{ 
+            current: listState.query.current, 
+            pageSize: listState.query.size, 
+            total: listState.total,
+            onChange: (page, pageSize) => {
+              listState.query.current = page
+              listState.query.size = pageSize
+              loadData()
+            }
+          }"
+        >
+          <template #renderItem="{ item }">
+            <a-list-item>
+              <a-list-item-meta
+                :description="item?.chunk"
+              >
+              </a-list-item-meta>
+              <template #actions>
+                <a-button type="link" v-if="item.status === 0" @click="onSwitchStatus(item)">启用</a-button>
+                <a-button type="link" v-if="item.status === 1" danger @click="onSwitchStatus(item)">禁用</a-button>
+              </template>
+            </a-list-item>
+          </template>
+        </a-list>
       </a-spin>
     </div>
   </div>
@@ -31,8 +57,7 @@ import {
 import ManageLeft from './components/ManageLeft.vue'
 import { message } from 'ant-design-vue'
 
-import { getList as getModeList } from '@/api/mode'
-import { getDetail, saveCreate } from '@/api/chunkConfig'
+import { getChunkList, getChunkToggle } from '@/api/documents'
 
 const formRef = ref(null)
 
@@ -40,19 +65,27 @@ const props = defineProps({
   kbId: {
     type: String,
     required: true
+  },
+  docId: {
+    type: String,
+    required: true
   }
-})
-const formData = ref({
-  target_id: props.kbId, // 目标ID，文档或知识库
-  type: 1, // 1: 知识库 2: 文档
-  embedding_model_id: '', // 向量模型
-  mode: 1, // 分段模式 1: 通用 2: 父子 3: 混合
-  chunk_size: '', // 分段最大长度
-  chunk_overlap: '', // 分段重叠长度
-  delimiters: '' // 分段标识符号
 })
 
 const router = useRouter()
+
+// 切换状态
+const onSwitchStatus = async (item) => {
+  try {
+    await getChunkToggle({
+      id: item.id
+    })
+    message.success('操作成功')
+    loadData()
+  } catch (error) {
+    message.error('操作失败')
+  }
+}
 
 // loading 配置
 const spinningConfig = reactive({
@@ -60,61 +93,38 @@ const spinningConfig = reactive({
   tip: '处理中...'
 })
 
+// 列表状态
+const listState = reactive(
+  {
+    data: [],
+    query: {
+      current: 1,
+      size: 5
+    },
+    total: 0
+  }
+)
+
 // 加载数据
 const loadData = async () => {
   spinningConfig.spinning = true
   try {
-    const res = await getDetail({
-      target_id: props.kbId,
-      type: 2
+    const res = await getChunkList({
+      doc_id: props.docId
+    }, listState.query)
+    listState.data = res?.data?.records??[]
+    listState.total = res?.data?.total??0
+    listState.forEach(item => {
+      item.statusTemp = item.status
     })
-    formData.value = Object.assign({}, formData.value, res?.data??{})
     spinningConfig.spinning = false
   } catch (error) {
     spinningConfig.spinning = false
   }
-}
-
-// 模型列表数据
-const modeList = ref([])
-
-// 获取模型列表
-const getModeListData = async () => {
-  try {
-    const res = await getModeList({
-      type: 2
-    })
-    modeList.value = res?.data?.records??[]
-
-  } catch (error) {
-  }
-}
-
-// 提交
-const onSubmit = () => {
-  formRef?.value
-    .validate()
-    .then(async () => {
-      spinningConfig.spinning = true
-      try {
-        const subData = JSON.parse(JSON.stringify(formData.value))
-        subData.target_id = props.kbId
-        subData.type = 1
-        await saveCreate(subData)
-        spinningConfig.spinning = false
-        message.success(`配置文档成功`)
-      } catch (error) {
-        spinningConfig.spinning = false
-      }
-    })
-    .catch(error => {
-      console.log('error', error)
-    })
 }
 
 // 生命周期
 onMounted(() => {
-  getModeListData()
   loadData()
 })
 
@@ -122,5 +132,11 @@ onMounted(() => {
 
 <style lang="scss" scoped>
 @import url('../../styles/manage.scss');
+.totalH{
+  font-size: 16px;
+  font-weight: bold;
+  color: #333;
+  padding: 8px 24px;
+}
 </style>
 
