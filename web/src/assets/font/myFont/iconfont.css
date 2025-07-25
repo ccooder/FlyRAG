@@ -1,0 +1,23 @@
+@font-face {
+  font-family: "myFont"; /* Project id 4983746 */
+  src: url('iconfont.woff2?t=1753408214086') format('woff2'),
+       url('iconfont.woff?t=1753408214086') format('woff'),
+       url('iconfont.ttf?t=1753408214086') format('truetype');
+}
+
+.myFont {
+  font-family: "myFont" !important;
+  font-size: 16px;
+  font-style: normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.myIcon-lianwangsousuo:before {
+  content: "\e6b1";
+}
+
+.myIcon-shendusikao:before {
+  content: "\e60c";
+}
+

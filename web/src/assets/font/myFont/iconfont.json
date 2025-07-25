@@ -1,0 +1,23 @@
+{
+  "id": "4983746",
+  "name": "FlyRAG",
+  "font_family": "myFont",
+  "css_prefix_text": "myIcon-",
+  "description": "FlyRAG",
+  "glyphs": [
+    {
+      "icon_id": "43648370",
+      "name": "联网搜索",
+      "font_class": "lianwangsousuo",
+      "unicode": "e6b1",
+      "unicode_decimal": 59057
+    },
+    {
+      "icon_id": "44193764",
+      "name": "深度思考",
+      "font_class": "shendusikao",
+      "unicode": "e60c",
+      "unicode_decimal": 58892
+    }
+  ]
+}
