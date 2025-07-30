@@ -1,16 +1,15 @@
 <!--
  * @Author: WuFeng <763467339@qq.com>
  * @Date: 2025-03-17 11:25:51
- * @LastEditTime: 2025-07-30 11:10:24
+ * @LastEditTime: 2025-07-30 11:22:32
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
  * @FilePath: \FlyRAG\web\src\components\HelloWorld.vue
  * Copyright 版权声明
 -->
 <script setup>
-import { ref, defineProps } from 'vue'
+import { ref } from 'vue'
 
-// Use defineProps macro to define component props
 defineProps({
   msg: String,
 })
