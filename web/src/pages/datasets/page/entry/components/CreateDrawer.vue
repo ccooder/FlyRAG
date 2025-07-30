@@ -1,7 +1,7 @@
 <!--
  * @Author: WuFeng <763467339@qq.com>
  * @Date: 2024-06-05 23:50:49
- * @LastEditTime: 2025-03-25 14:39:59
+ * @LastEditTime: 2025-07-30 16:19:40
  * @LastEditors: WuFeng <763467339@qq.com>
  * @Description: 
  * @FilePath: \FlyRAG\web\src\pages\datasets\page\entry\components\CreateDrawer.vue
@@ -128,6 +128,9 @@
           wrapperCol: { span: 14 }
         }"
       >
+        <h2>
+          切片配置
+        </h2>
         <a-form-item has-feedback label="向量模型" :name="['chunk_config', 'embedding_model_id']" :rules="[{ required: true, message: '请选择向量模型', trigger: 'change' }]">
           <a-select
             v-model:value="formData.chunk_config.embedding_model_id"
@@ -155,6 +158,35 @@
         </a-form-item>
         <a-form-item has-feedback label="分段重叠长度" :name="['chunk_config', 'chunk_overlap']" :rules="[{ required: true, message: '请输入分段重叠长度', trigger: 'change' }]">
           <a-input v-model:value="formData.chunk_config.chunk_overlap" placeholder="分段重叠长度" />
+        </a-form-item>
+
+        <h2>检索配置</h2>
+        <a-form-item has-feedback label="检索模式" :name="['retrival_config', 'mode']" :rules="[{ required: true, message: '请选择检索模式', trigger: 'change' }]">
+          <a-select
+            v-model:value="formData.retrival_config.mode"
+            placeholder="请选择检索模式"
+          >
+            <a-select-option :value="2">混合模式</a-select-option>
+            <a-select-option :value="1">打分调序</a-select-option>
+          </a-select>
+        </a-form-item>
+        <a-form-item has-feedback label="重排序模型" :name="['retrival_config', 'reranker_model_id']" :rules="[{ required: true, message: '请选择重排序模型', trigger: 'change' }]">
+          <a-select
+            v-model:value="formData.retrival_config.reranker_model_id"
+            placeholder="请选择重排序模型"
+            :options="modeList"
+            :field-names="{ label: 'name', value: 'id', options: 'children' }"
+          >
+          </a-select>
+        </a-form-item>
+        <a-form-item has-feedback label="检索取前K个" :name="['retrival_config', 'top_k']" :rules="[{ required: true, message: '请输入检索取前K个', trigger: 'change' }]">
+          <a-input v-model:value="formData.retrival_config.top_k" placeholder="取值范围 1-10" />
+        </a-form-item>
+        <a-form-item has-feedback label="重排序后取前N个" :name="['retrival_config', 'top_n']" :rules="[{ required: true, message: '请输入重排序后取前N个', trigger: 'change' }]">
+          <a-input v-model:value="formData.retrival_config.top_n" placeholder="取值范围 1-5" />
+        </a-form-item>
+        <a-form-item has-feedback label="Score阈值" :name="['retrival_config', 'score']" :rules="[{ required: true, message: '请输入Score阈值', trigger: 'change' }]">
+          <a-input v-model:value="formData.retrival_config.score" placeholder="0 表示无阈值，取值范围 0-1" />
         </a-form-item>
       </a-form>
 
@@ -223,6 +255,13 @@ const formData = ref({
     chunk_size: '500', // 分段最大长度
     chunk_overlap: '200', // 分段重叠长度
     delimiters: '\\n\\n' // 分段标识符号
+  },
+  retrival_config: {
+    reranker_model_id: '',
+    mode: 2,
+    top_k: '',
+    top_n: '',
+    score: ''
   }
 })
 
@@ -316,6 +355,13 @@ const onShow = ({ type = 'create', row = {} }) => {
       chunk_size: '500', // 分段最大长度
       chunk_overlap: '200', // 分段重叠长度
       delimiters: '\\n\\n' // 分段标识符号
+    },
+    retrival_config: {
+      reranker_model_id: '',
+      mode: 2,
+      top_k: 2,
+      top_n: 2,
+      score: 0
     }
   }
   if (type !== 'create') {
@@ -380,7 +426,7 @@ const getModeListData = async () => {
     const res = await getModeList({
       type: 2
     })
-    modeList.value = res?.data??[]
+    modeList.value = res?.data?.records??[]
   } catch (error) {
   }
 }
