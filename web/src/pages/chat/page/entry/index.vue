@@ -79,30 +79,32 @@
           AI助手
         </div>
       </div>
-      <div class="chatBody">
+      <div class="chatBody" ref="contentBodyRef">
         <!-- 对话内容 -->
         <div class="chatBodyWrap">
-          <!-- 问 -->
-          <div class="ask">
-            <div class="askContent">
-              你好
+          <template v-for="(item, index) in rag.messageList" :key="index">
+            <!-- 问 -->
+            <div class="ask" v-if="item.type === 'ask'">
+              <div class="askContent">
+                {{ item.content }}
+              </div>
             </div>
-          </div>
-          <!-- 答 -->
-          <div class="answer">
-            <img src="@/assets/images/chat/chat-icon.png" alt="" class="answerIcon">
-            <div class="answerContent">
-              你好，我是AI助手
+            <!-- 答 -->
+            <div class="answer" v-if="item.type === 'answer'">
+              <img src="@/assets/images/chat/chat-icon.png" alt="" class="answerIcon">
+              <div class="answerContent">
+                {{ item.content }}
+              </div>
             </div>
-          </div>
-          <!-- 更多对话... -->
+            <!-- 更多对话... -->
+          </template>
         </div>
       </div>
       <div class="chatFooter">
         <div class="chatFooterWrap">
           <div class="chatFooterInput">
             <a-textarea
-              v-model:value="inputText"
+              v-model:value="rag.inputText"
               placeholder="直接输入对文件内容的要求，或文件的用途。"
               :auto-size="{ minRows: 1, maxRows: 10 }"
               @keydown.enter.prevent="onSend"
@@ -120,7 +122,7 @@
               </span>
             </div>
             <div class="sendBtn">
-              <a-button type="primary" :disabled="inputText === ''" @click="onSend">发送</a-button>
+              <a-button :loading="rag.isSending" type="primary" :disabled="rag.inputText === ''" @click="onSend">发送</a-button>
             </div>
           </div>
         </div>
@@ -134,20 +136,143 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { PlusOutlined, LeftCircleOutlined, RightCircleOutlined, EllipsisOutlined, EditOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 
-const inputText = ref('')
+import { gettoken, aiChat } from '@/api/chat.js'
+
+
 // 控制 chatHistory 显示隐藏的状态
 const isChatHistoryVisible = ref(true)
 
+// 内容容器引用
+const contentBodyRef = ref(null)
+
+// ai 助手
+const rag = reactive({
+  // 会话 token
+  token: '',
+  // 输入框内容
+  inputText: '',
+  // 是否为发送中
+  isSending: false,
+  // 对话 list
+  messageList: []
+})
+
 // 发送
 const onSend = () => {
-  if (inputText.value.trim()) { // 检查输入内容是否为空
-    console.log(inputText.value)
-    inputText.value = '' // 发送后清空输入框
+  // 检查输入内容是否为空
+  if (rag.inputText.trim()) {
+    console.log(rag.inputText)
   }
+  if (!rag.token) {
+    gettoken().then(res => {
+      rag.token = res.data
+      onSendMessage()
+    })
+    return
+  }
+
+  // 发送状态
+  rag.isSending = true
+
+  const url = aiChat()
+  const params = {
+    appId: 'string',
+    appToken: rag.token,
+    // appToken: rag.token + 'a',
+    message: rag.inputText,
+    userId: `${new Date().getTime()}`
+  }
+
+  // 使用 fetch 发起 POST 请求
+  fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify(params)
+  })
+  .then(response => {
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`)
+    }
+    if (!response.body) {
+      throw new Error('No response body')
+    }
+    
+    // 问题内容
+    rag.messageList.push({
+      type: 'ask',
+      content: rag.inputText
+    })
+    // 回答内容
+    rag.messageList.push({
+      type: 'answer',
+      content: ''
+    })
+
+    // 发送后清空输入框
+    rag.inputText = ''
+
+    const reader = response.body.getReader()
+    const decoder = new TextDecoder('utf-8')
+    let buffer = ''
+
+    const readChunk = async () => {
+      const aaa = await reader.read()
+      // console.log('--------------------', aaa)
+      const { done, value } = await reader.read()
+      if (done === true) {
+        // 加载结束
+        rag.isSending = false
+        return
+      }
+      buffer += decoder.decode(value, { stream: true })
+      const events = buffer.split(/\n\n/)
+      buffer = events.pop() || ''
+
+      events.forEach(event => {
+        if (event.startsWith('data:')) {
+          const data = event.slice(5).trim()
+          // console.log('--', data)
+          try {
+            const parsedData = JSON.parse(data)
+            // 假设解析后的数据中有一个名为 'content' 的字段存储回答内容
+            const content = parsedData?.answer ?? ''
+            if (content) {
+              // 回答内容
+              rag.messageList[rag.messageList.length - 1].content += content
+              // console.log(`🚀 ~ readChunk ~ rag.messageList:`, rag.messageList)
+              // 自动滚动到最新内容位置
+              if (contentBodyRef.value) {
+                contentBodyRef.value.scrollTop = contentBodyRef.value.scrollHeight
+              }
+            }
+          } catch (error) {
+            // console.error('解析 SSE 数据出错:', error)
+            // rag.isSending = false
+          }
+        }
+      })
+
+      return readChunk()
+    }
+
+    return readChunk()
+  })
+  .catch(error => {
+    console.error('SSE 请求出错:', error)
+    // 加载出错，结束加载状态
+    rag.isSending = false
+  })
 }
 
 // 生命周期
 onMounted(() => {
+  gettoken({
+    appId: 'string'
+  }).then(res => {
+    rag.token = res?.data?.appToken ?? ''
+  })
 })
 </script>
 

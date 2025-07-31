@@ -12,4 +12,25 @@ export default defineConfig({
     }
   },
   plugins: [vue()],
+  // 开发环境配置
+  server: {
+    // // host: 'localhost',
+    // port: 9000,
+    // hmr: {
+    //   // 有错误信息弹出提示
+    //   overlay: false
+    // },
+    proxy: {
+      // '/api': {
+      //   target: webpackConfig.PROXY_URL,
+      //   changeOrigin: true, //是否跨域
+      //   rewrite: (path) => path.replace(/^\/api/, ''),
+      // },
+      '/ragAPI': {
+        target: 'http://192.168.28.245:7788',
+        changeOrigin: true, //是否跨域
+        rewrite: (path) => path.replace(/^\/ragAPI/, '')
+      }
+    }
+  }
 })
