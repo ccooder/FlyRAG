@@ -81,7 +81,7 @@
       </div>
       <div class="chatBody" ref="contentBodyRef">
         <!-- 对话内容 -->
-        <div class="chatBodyWrap">
+        <div class="chatBodyWrap" v-if="rag.messageList.length > 0">
           <template v-for="(item, index) in rag.messageList" :key="index">
             <!-- 问 -->
             <div class="ask" v-if="item.type === 'ask'">
@@ -98,6 +98,14 @@
             </div>
             <!-- 更多对话... -->
           </template>
+        </div>
+        <div class="emptyMessage" v-else>
+          <h3>
+            我是 AI 助手，很高兴见到你！
+          </h3>
+          <p>
+            我是一个 AI 助手，你可以向我咨询任何问题。
+          </p>
         </div>
       </div>
       <div class="chatFooter">
@@ -392,29 +400,44 @@ onMounted(() => {
         display: flex;
         flex-direction: column;
         gap: 12px; // 对话之间的间距
-      }
-      .ask {
-        display: flex;
-        justify-content: flex-end; // 提问内容在右侧
-        .askContent {
-          background-color: #F7FAFF; // 提问背景色
-          padding: 12px 16px;
-          border-radius: 8px;
-          max-width: 70%;
+        .ask {
+          display: flex;
+          justify-content: flex-end; // 提问内容在右侧
+          .askContent {
+            background-color: #F7FAFF; // 提问背景色
+            padding: 12px 16px;
+            border-radius: 8px;
+            max-width: 70%;
+          }
+        }
+        .answer {
+          display: flex;
+          align-items: flex-start;
+          .answerIcon {
+            width: 49px;
+            margin-right: 5px;
+          }
+          .answerContent {
+            background-color: #F7FAFF; // 回答背景色
+            padding: 12px 16px;
+            border-radius: 8px;
+            max-width: 70%;
+          }
         }
       }
-      .answer {
-        display: flex;
-        align-items: flex-start;
-        .answerIcon {
-          width: 49px;
-          margin-right: 5px;
+      .emptyMessage{
+        display: flex; // 使用 Flexbox 布局
+        flex-direction: column; // 子元素垂直排列
+        justify-content: center; // 垂直居中
+        align-items: center; // 水平居中
+        height: 100%; // 确保容器高度占满父元素
+        text-align: center; // 文本水平居中
+        h3{
+          font-size: 22px;
+          font-weight: bold;
         }
-        .answerContent {
-          background-color: #F7FAFF; // 回答背景色
-          padding: 12px 16px;
-          border-radius: 8px;
-          max-width: 70%;
+        p{
+          margin-top: 5px;
         }
       }
     }
